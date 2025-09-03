@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [fontSize, setFontSize] = useState<FontSize>('lg');
   const [lineHeight, setLineHeight] = useState<LineHeight>('relaxed');
   const [showSettings, setShowSettings] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fontSizeClassMap: Record<FontSize, string> = {
     base: 'text-base',
@@ -28,10 +29,51 @@ const App: React.FC = () => {
   };
 
   const textClasses = `${fontSizeClassMap[fontSize]} ${lineHeightClassMap[lineHeight]}`;
+  
+  const lowercasedQuery = searchQuery.toLowerCase().trim();
+
+  const highlightText = (text: string, highlight: string): React.ReactNode => {
+    if (!highlight) {
+        return text;
+    }
+    // Escape special characters for regex
+    const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedHighlight})`, 'gi');
+    const parts = text.split(regex);
+    return (
+        <>
+            {parts.map((part, i) =>
+                part.toLowerCase() === highlight.toLowerCase() ? (
+                    <mark key={i} className="bg-amber-400 text-slate-900 px-1 rounded-sm">
+                        {part}
+                    </mark>
+                ) : (
+                    part
+                )
+            )}
+        </>
+    );
+  };
+
+  const filteredSections = lowercasedQuery === '' ? sections : sections.filter(section => 
+    section.title.toLowerCase().includes(lowercasedQuery) ||
+    section.points.some(point => point.text.toLowerCase().includes(lowercasedQuery))
+  );
+
+  const introductionMatch = lowercasedQuery === '' ||
+    introduction.title.toLowerCase().includes(lowercasedQuery) ||
+    introduction.paragraphs.some(p => p.toLowerCase().includes(lowercasedQuery)) ||
+    introduction.sections.some(s => s.toLowerCase().includes(lowercasedQuery)) ||
+    introduction.conclusion.toLowerCase().includes(lowercasedQuery);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-gray-200 flex flex-col">
-      <Header onToggleSettings={() => setShowSettings(!showSettings)} />
+      <Header 
+        onToggleSettings={() => setShowSettings(!showSettings)} 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
       
       <SettingsPanel
         isOpen={showSettings}
@@ -48,38 +90,50 @@ const App: React.FC = () => {
           <div className="lg:flex lg:gap-12">
             {/* Sidebar for Table of Contents */}
             <aside className="lg:w-1/3 xl:w-1/4">
-              <TableOfContents sections={sections} />
+              <TableOfContents sections={filteredSections} />
             </aside>
 
             {/* Main Content Column */}
             <div className="flex-1 mt-12 lg:mt-0">
               {/* Introduction Section */}
-              <div className="mb-12 border-b-2 border-amber-500/30 pb-8">
-                <h2 className="text-3xl md:text-4xl font-bold text-amber-400 mb-6">{introduction.title}</h2>
-                <div className={`space-y-4 text-gray-300 ${textClasses}`}>
-                  {introduction.paragraphs.map((p, index) => (
-                    <p key={index}>{p}</p>
-                  ))}
-                </div>
-                <div className={`mt-6 space-y-2 text-gray-300 ${textClasses}`}>
-                    {introduction.sections.map((s, index) => (
-                        <p key={index} className="pl-4">{s}</p>
+              {introductionMatch && (
+                <div className="mb-12 border-b-2 border-amber-500/30 pb-8">
+                  <h2 className="text-3xl md:text-4xl font-bold text-amber-400 mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
+                  <div className={`space-y-4 text-gray-300 ${textClasses}`}>
+                    {introduction.paragraphs.map((p, index) => (
+                      <p key={index}>{highlightText(p, lowercasedQuery)}</p>
                     ))}
+                  </div>
+                  <div className={`mt-6 space-y-2 text-gray-300 ${textClasses}`}>
+                      {introduction.sections.map((s, index) => (
+                          <p key={index} className="pl-4">{highlightText(s, lowercasedQuery)}</p>
+                      ))}
+                  </div>
+                  <p className={`mt-6 text-gray-300 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
                 </div>
-                <p className={`mt-6 text-gray-300 ${textClasses}`}>{introduction.conclusion}</p>
-              </div>
+              )}
               
               {/* Content Sections */}
-              <div className="space-y-12">
-                {sections.map((section, index) => (
-                  <ContentSection
-                    key={index}
-                    title={section.title}
-                    points={section.points}
-                    textClasses={textClasses}
-                  />
-                ))}
-              </div>
+              {filteredSections.length > 0 ? (
+                <div className="space-y-12">
+                  {filteredSections.map((section, index) => (
+                    <ContentSection
+                      key={index}
+                      title={section.title}
+                      points={section.points}
+                      textClasses={textClasses}
+                      searchQuery={searchQuery}
+                    />
+                  ))}
+                </div>
+              ) : (
+                searchQuery && !introductionMatch && (
+                  <div className="text-center py-12 text-gray-400">
+                    <h3 className="text-2xl font-bold mb-2">لا توجد نتائج</h3>
+                    <p>لم نتمكن من العثور على أي نتائج لبحثك عن "{searchQuery}".</p>
+                  </div>
+                )
+              )}
             </div>
           </div>
 

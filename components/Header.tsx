@@ -3,9 +3,11 @@ import React from 'react';
 
 interface HeaderProps {
   onToggleSettings: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onToggleSettings }) => {
+const Header: React.FC<HeaderProps> = ({ onToggleSettings, searchQuery, onSearchChange }) => {
   return (
     <header className="py-8 bg-slate-900/70 backdrop-blur-sm border-b border-slate-700/50 relative">
       <div className="container mx-auto text-center px-4">
@@ -15,7 +17,26 @@ const Header: React.FC<HeaderProps> = ({ onToggleSettings }) => {
         <p className="mt-4 text-lg md:text-xl text-amber-400">
           جمع وإعداد: د. عبد الله بن محمد الدخيل
         </p>
+
+        <div className="mt-8 max-w-2xl mx-auto">
+          <div className="relative">
+            <input
+              type="search"
+              placeholder="ابحث في المحتوى..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full px-5 py-3 pr-12 bg-slate-800/60 border border-slate-700 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+              aria-label="Search content"
+            />
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
+      
       <div className="absolute top-1/2 -translate-y-1/2 left-4 md:left-8">
         <button
           onClick={onToggleSettings}
