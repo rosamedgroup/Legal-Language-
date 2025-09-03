@@ -6,11 +6,28 @@ import ContentSection from './components/ContentSection';
 import TableOfContents from './components/TableOfContents';
 import SettingsPanel from './components/SettingsPanel';
 import ShareModal from './components/ShareModal';
-import { introduction, sections, Section } from './data/content';
-import { highlightText, slugify } from './utils';
+import { introduction as enhancementsIntro, sections as enhancementsSections, Section } from './data/content';
+import { introduction as caseStudyIntro, sections as caseStudySections } from './data/caseStudyContent';
+import { highlightText } from './utils';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
+export type DocumentType = 'enhancements' | 'caseStudy';
+
+const documents = {
+  enhancements: {
+    title: 'محسنات الصياغة القانونية',
+    author: 'جمع وإعداد: د. عبد الله بن محمد الدخيل',
+    introduction: enhancementsIntro,
+    sections: enhancementsSections,
+  },
+  caseStudy: {
+    title: 'مجموعة الأحكام الإدارية',
+    author: 'دراسة حالة قضائية',
+    introduction: caseStudyIntro,
+    sections: caseStudySections,
+  },
+};
 
 const App: React.FC = () => {
   const [fontSize, setFontSize] = useState<FontSize>('lg');
@@ -19,6 +36,10 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareContent, setShareContent] = useState<{ title: string; url: string } | null>(null);
+  const [activeDocument, setActiveDocument] = useState<DocumentType>('enhancements');
+
+  const currentDoc = documents[activeDocument];
+  const { introduction, sections } = currentDoc;
 
   const fontSizeClassMap: Record<FontSize, string> = {
     base: 'text-base',
@@ -38,7 +59,7 @@ const App: React.FC = () => {
 
   const handleOpenShareModal = (title: string, slug?: string) => {
     const baseUrl = window.location.href.split('#')[0].split('?')[0];
-    const url = slug ? `${baseUrl}#${slug}` : baseUrl;
+    const url = slug ? `${baseUrl}?doc=${activeDocument}#${slug}` : `${baseUrl}?doc=${activeDocument}`;
     setShareContent({ title, url });
     setIsShareModalOpen(true);
   };
@@ -54,23 +75,23 @@ const App: React.FC = () => {
     let score = 0;
     const lowercasedTitle = section.title.toLowerCase();
 
-    // Prioritize exact title match
-    if (lowercasedTitle === query) {
-      score += 100;
-    } 
-    // Partial title match
-    else if (lowercasedTitle.includes(query)) {
-      score += 50;
-    }
+    if (lowercasedTitle === query) score += 100;
+    else if (lowercasedTitle.includes(query)) score += 50;
 
-    // Keyword in points
     const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    section.points.forEach(point => {
-      const matches = point.text.toLowerCase().match(regex);
-      if (matches) {
-        score += matches.length * 5; // Score based on number of occurrences
-      }
-    });
+    
+    if (section.points) {
+        section.points.forEach(point => {
+            const matches = point.text.toLowerCase().match(regex);
+            if (matches) score += matches.length * 5;
+        });
+    }
+    if (section.paragraphs) {
+        section.paragraphs.forEach(paragraph => {
+            const matches = paragraph.toLowerCase().match(regex);
+            if (matches) score += matches.length * 5;
+        });
+    }
 
     return score;
   };
@@ -85,13 +106,11 @@ const App: React.FC = () => {
         .filter(section => section.score > 0)
         .sort((a, b) => b.score - a.score);
 
-
   const introductionMatch = lowercasedQuery === '' ||
-    introduction.title.toLowerCase().includes(lowercasedQuery) ||
-    introduction.paragraphs.some(p => p.toLowerCase().includes(lowercasedQuery)) ||
-    introduction.sections.some(s => s.toLowerCase().includes(lowercasedQuery)) ||
-    introduction.conclusion.toLowerCase().includes(lowercasedQuery);
-
+    (introduction.title && introduction.title.toLowerCase().includes(lowercasedQuery)) ||
+    (introduction.paragraphs && introduction.paragraphs.some(p => p.toLowerCase().includes(lowercasedQuery))) ||
+    (introduction.sections && introduction.sections.some(s => s.toLowerCase().includes(lowercasedQuery))) ||
+    (introduction.conclusion && introduction.conclusion.toLowerCase().includes(lowercasedQuery));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-gray-200 flex flex-col">
@@ -99,7 +118,10 @@ const App: React.FC = () => {
         onToggleSettings={() => setShowSettings(!showSettings)} 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onShare={() => handleOpenShareModal('محسنات الصياغة القانونية')}
+        onShare={() => handleOpenShareModal(currentDoc.title)}
+        activeDocument={activeDocument}
+        onDocumentChange={setActiveDocument}
+        documents={documents}
       />
       
       <SettingsPanel
@@ -121,32 +143,34 @@ const App: React.FC = () => {
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-10">
           
           <div className="lg:flex lg:gap-12">
-            {/* Sidebar for Table of Contents */}
             <aside className="lg:w-1/3 xl:w-1/4">
               <TableOfContents sections={filteredSections} />
             </aside>
 
-            {/* Main Content Column */}
             <div className="flex-1 mt-12 lg:mt-0">
-              {/* Introduction Section */}
-              {introductionMatch && (
+              {introductionMatch && introduction.title && (
                 <div className="mb-12 border-b-2 border-amber-500/30 pb-8">
                   <h2 className="text-3xl md:text-4xl font-bold text-amber-400 mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
-                  <div className={`space-y-4 text-gray-300 ${textClasses}`}>
-                    {introduction.paragraphs.map((p, index) => (
-                      <p key={index}>{highlightText(p, lowercasedQuery)}</p>
-                    ))}
-                  </div>
-                  <div className={`mt-6 space-y-2 text-gray-300 ${textClasses}`}>
-                      {introduction.sections.map((s, index) => (
-                          <p key={index} className="pl-4">{highlightText(s, lowercasedQuery)}</p>
+                  {introduction.paragraphs && (
+                    <div className={`space-y-4 text-gray-300 ${textClasses}`}>
+                      {introduction.paragraphs.map((p, index) => (
+                        <p key={index}>{highlightText(p, lowercasedQuery)}</p>
                       ))}
-                  </div>
-                  <p className={`mt-6 text-gray-300 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
+                    </div>
+                  )}
+                  {introduction.sections && (
+                    <div className={`mt-6 space-y-2 text-gray-300 ${textClasses}`}>
+                        {introduction.sections.map((s, index) => (
+                            <p key={index} className="pl-4">{highlightText(s, lowercasedQuery)}</p>
+                        ))}
+                    </div>
+                  )}
+                  {introduction.conclusion && (
+                    <p className={`mt-6 text-gray-300 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
+                  )}
                 </div>
               )}
               
-              {/* Content Sections */}
               {filteredSections.length > 0 ? (
                 <div className="space-y-12">
                   {filteredSections.map((section) => (
@@ -154,6 +178,7 @@ const App: React.FC = () => {
                       key={section.title}
                       title={section.title}
                       points={section.points}
+                      paragraphs={section.paragraphs}
                       textClasses={textClasses}
                       searchQuery={searchQuery}
                       onShare={handleOpenShareModal}

@@ -1,17 +1,19 @@
+
 import React, { useMemo } from 'react';
 import { Point, Section as SectionType } from '../data/content';
 import { slugify, highlightText, findRelatedSections } from '../utils';
 
 interface ContentSectionProps {
   title: string;
-  points: Point[];
+  points?: Point[];
+  paragraphs?: string[];
   textClasses: string;
   searchQuery: string;
   onShare: (title: string, slug: string) => void;
   allSections: SectionType[];
 }
 
-const ContentSection: React.FC<ContentSectionProps> = ({ title, points, textClasses, searchQuery, onShare, allSections }) => {
+const ContentSection: React.FC<ContentSectionProps> = ({ title, points, paragraphs, textClasses, searchQuery, onShare, allSections }) => {
   const relatedSections = useMemo(
     () => findRelatedSections(title, allSections),
     [title, allSections]
@@ -33,14 +35,25 @@ const ContentSection: React.FC<ContentSectionProps> = ({ title, points, textClas
           </svg>
         </button>
       </div>
-      <ol className="space-y-5">
-        {points.map((point) => (
-          <li key={point.id} className={`flex items-start ${textClasses}`}>
-            <span className="ml-4 text-xl font-bold text-amber-500">{point.id}.</span>
-            <span className="flex-1 text-gray-300">{highlightText(point.text, searchQuery)}</span>
-          </li>
-        ))}
-      </ol>
+      
+      {points && (
+        <ol className="space-y-5">
+          {points.map((point) => (
+            <li key={point.id} className={`flex items-start ${textClasses}`}>
+              <span className="ml-4 text-xl font-bold text-amber-500">{point.id}.</span>
+              <span className="flex-1 text-gray-300">{highlightText(point.text, searchQuery)}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {paragraphs && (
+        <div className={`space-y-5 text-gray-300 ${textClasses}`}>
+            {paragraphs.map((paragraph, index) => (
+                <p key={index}>{highlightText(paragraph, searchQuery)}</p>
+            ))}
+        </div>
+      )}
 
       {relatedSections.length > 0 && (
         <div className="mt-8 pt-6 border-t border-slate-700/50">

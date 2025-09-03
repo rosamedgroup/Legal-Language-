@@ -1,22 +1,64 @@
 
 import React from 'react';
+import { DocumentType } from '../App';
 
 interface HeaderProps {
   onToggleSettings: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onShare: () => void;
+  activeDocument: DocumentType;
+  onDocumentChange: (doc: DocumentType) => void;
+  documents: any;
 }
 
-const Header: React.FC<HeaderProps> = ({ onToggleSettings, searchQuery, onSearchChange, onShare }) => {
+const DocumentButton: React.FC<{
+  onClick: () => void;
+  isActive: boolean;
+  children: React.ReactNode;
+}> = ({ onClick, isActive, children }) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 text-sm sm:text-base rounded-full transition-all duration-300 transform hover:scale-105 ${
+      isActive
+        ? 'bg-amber-500 text-slate-900 font-bold shadow-lg'
+        : 'bg-slate-800/60 hover:bg-slate-700/80 text-gray-300'
+    }`}
+  >
+    {children}
+  </button>
+);
+
+
+const Header: React.FC<HeaderProps> = ({ 
+  onToggleSettings, 
+  searchQuery, 
+  onSearchChange, 
+  onShare,
+  activeDocument,
+  onDocumentChange,
+  documents
+}) => {
+  const currentDoc = documents[activeDocument];
+
   return (
     <header className="py-8 bg-slate-900/70 backdrop-blur-sm border-b border-slate-700/50 relative">
       <div className="container mx-auto text-center px-4">
+        
+        <div className="flex justify-center gap-2 sm:gap-4 mb-6">
+            <DocumentButton onClick={() => onDocumentChange('enhancements')} isActive={activeDocument === 'enhancements'}>
+                محسنات الصياغة
+            </DocumentButton>
+            <DocumentButton onClick={() => onDocumentChange('caseStudy')} isActive={activeDocument === 'caseStudy'}>
+                دراسة حالة
+            </DocumentButton>
+        </div>
+
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-wide">
-          محسنات الصياغة القانونية
+          {currentDoc.title}
         </h1>
         <p className="mt-4 text-lg md:text-xl text-amber-400">
-          جمع وإعداد: د. عبد الله بن محمد الدخيل
+          {currentDoc.author}
         </p>
 
         <div className="mt-8 max-w-2xl mx-auto">

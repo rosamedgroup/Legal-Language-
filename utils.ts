@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Section } from './data/content';
 
@@ -93,7 +94,9 @@ const jaccardSimilarity = (setA: Set<string>, setB: Set<string>): number => {
  */
 export const findRelatedSections = (currentTitle: string, allSections: Section[], count: number = 3): string[] => {
   const sectionsWithKeywords = allSections.map(section => {
-    const content = `${section.title} ${section.points.map(p => p.text).join(' ')}`;
+    const pointsText = section.points ? section.points.map(p => p.text).join(' ') : '';
+    const paragraphsText = section.paragraphs ? section.paragraphs.join(' ') : '';
+    const content = `${section.title} ${pointsText} ${paragraphsText}`;
     return {
       title: section.title,
       keywords: getKeywords(content),
