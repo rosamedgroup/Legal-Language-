@@ -1,14 +1,11 @@
 
 import React, { useState } from 'react';
 import { Section } from '../data/content';
+import { slugify } from '../utils';
 
 interface TableOfContentsProps {
   sections: Section[];
 }
-
-const slugify = (text: string) => {
-  return text.trim().replace(/[\s.,;:'()]/g, '-').toLowerCase();
-};
 
 const TableOfContents: React.FC<TableOfContentsProps> = ({ sections }) => {
   const [jumpQuery, setJumpQuery] = useState('');
@@ -32,7 +29,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections }) => {
           aria-label="Jump to section"
         />
         <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>

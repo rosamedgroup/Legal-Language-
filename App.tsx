@@ -7,6 +7,7 @@ import TableOfContents from './components/TableOfContents';
 import SettingsPanel from './components/SettingsPanel';
 import ShareModal from './components/ShareModal';
 import { introduction, sections, Section } from './data/content';
+import { highlightText, slugify } from './utils';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
@@ -45,28 +46,6 @@ const App: React.FC = () => {
   const handleCloseShareModal = () => {
     setIsShareModalOpen(false);
     setShareContent(null);
-  };
-
-  const highlightText = (text: string, highlight: string): React.ReactNode => {
-    if (!highlight) {
-        return text;
-    }
-    const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedHighlight})`, 'gi');
-    const parts = text.split(regex);
-    return (
-        <>
-            {parts.map((part, i) =>
-                part.toLowerCase() === highlight.toLowerCase() ? (
-                    <mark key={i} className="bg-amber-400 text-slate-900 px-1 rounded-sm">
-                        {part}
-                    </mark>
-                ) : (
-                    part
-                )
-            )}
-        </>
-    );
   };
 
   const getScore = (section: Section, query: string): number => {

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
+import React, { useMemo } from 'react';
 import { Point, Section as SectionType } from '../data/content';
+import { slugify, highlightText, findRelatedSections } from '../utils';
 
 interface ContentSectionProps {
   title: string;
@@ -11,114 +11,11 @@ interface ContentSectionProps {
   allSections: SectionType[];
 }
 
-const slugify = (text: string) => {
-  return text.trim().replace(/[\s.,;:'()]/g, '-').toLowerCase();
-};
-
-const highlightText = (text: string, highlight: string): React.ReactNode => {
-    const lowercasedHighlight = highlight.toLowerCase().trim();
-    if (!lowercasedHighlight) {
-        return text;
-    }
-    // Escape special characters for regex
-    const escapedHighlight = lowercasedHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedHighlight})`, 'gi');
-    const parts = text.split(regex);
-    return (
-        <>
-            {parts.map((part, i) =>
-                part.toLowerCase() === lowercasedHighlight ? (
-                    <mark key={i} className="bg-amber-400 text-slate-900 px-1 rounded-sm">
-                        {part}
-                    </mark>
-                ) : (
-                    part
-                )
-            )}
-        </>
-    );
-};
-
 const ContentSection: React.FC<ContentSectionProps> = ({ title, points, textClasses, searchQuery, onShare, allSections }) => {
-  const [relatedSections, setRelatedSections] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isApiKeyAvailable, setIsApiKeyAvailable] = useState(false);
-
-  useEffect(() => {
-    let apiKeyPresent = false;
-    try {
-      // Safely check for API key. This will fail in a browser without a build step, which is handled by the catch block.
-      if (process.env.API_KEY) {
-        apiKeyPresent = true;
-      }
-    } catch (e) {
-      if (e instanceof ReferenceError) {
-        console.warn("API_KEY environment variable not available. Skipping related sections feature.");
-      } else {
-        throw e;
-      }
-      apiKeyPresent = false;
-    }
-    
-    setIsApiKeyAvailable(apiKeyPresent);
-
-    if (!apiKeyPresent) {
-      return;
-    }
-
-    const fetchRelatedSections = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const otherSectionTitles = allSections
-          .filter(s => s.title !== title)
-          .map(s => s.title);
-
-        const prompt = `Analyze the following list of legal section titles and identify the 2 or 3 titles that are most logically related to the section "${title}". Return your answer as a JSON object with a single key "related_titles" which is an array of the related titles. The context is a document about legal drafting.\n\nList of all section titles: ${otherSectionTitles.join(', ')}`;
-        
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        related_titles: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.STRING,
-                                description: "The title of a related section."
-                            },
-                            description: "An array of 2-3 related section titles."
-                        }
-                    }
-                }
-            },
-        });
-        
-        const jsonString = response.text.trim();
-
-        if (jsonString) {
-          const result = JSON.parse(jsonString);
-          setRelatedSections(result.related_titles || []);
-        } else {
-          setRelatedSections([]);
-        }
-
-      } catch (err) {
-        console.error(`Error fetching related sections for "${title}":`, err);
-        setError("An error occurred while fetching related sections.");
-        setRelatedSections([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRelatedSections();
-  }, [title, allSections]);
+  const relatedSections = useMemo(
+    () => findRelatedSections(title, allSections),
+    [title, allSections]
+  );
 
   return (
     <section id={slugify(title)} className="scroll-mt-24">
@@ -145,34 +42,26 @@ const ContentSection: React.FC<ContentSectionProps> = ({ title, points, textClas
         ))}
       </ol>
 
-      {isApiKeyAvailable && (
+      {relatedSections.length > 0 && (
         <div className="mt-8 pt-6 border-t border-slate-700/50">
           <h3 className="text-xl font-semibold text-amber-300 mb-3">
             أقسام ذات صلة
           </h3>
-          {isLoading ? (
-            <p className="text-gray-400 animate-pulse">جاري البحث عن أقسام ذات صلة...</p>
-          ) : error ? (
-             <p className="text-red-400">{error}</p>
-          ) : relatedSections.length > 0 ? (
-            <ul className="space-y-2">
-              {relatedSections.map((relatedTitle, index) => (
-                <li key={index}>
-                  <a
-                    href={`#${slugify(relatedTitle)}`}
-                    className="flex items-center text-gray-300 hover:text-amber-400 transition-colors duration-200 group"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 text-amber-500 group-hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                    <span>{relatedTitle}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-400">لم يتم العثور على أقسام ذات صلة.</p>
-          )}
+          <ul className="space-y-2">
+            {relatedSections.map((relatedTitle, index) => (
+              <li key={index}>
+                <a
+                  href={`#${slugify(relatedTitle)}`}
+                  className="flex items-center text-gray-300 hover:text-amber-400 transition-colors duration-200 group"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 text-amber-500 group-hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <span>{relatedTitle}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </section>
