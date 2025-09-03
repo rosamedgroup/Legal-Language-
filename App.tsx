@@ -5,7 +5,8 @@ import Footer from './components/Footer';
 import ContentSection from './components/ContentSection';
 import TableOfContents from './components/TableOfContents';
 import SettingsPanel from './components/SettingsPanel';
-import { introduction, sections } from './data/content';
+import ShareModal from './components/ShareModal';
+import { introduction, sections, Section } from './data/content';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
@@ -15,6 +16,8 @@ const App: React.FC = () => {
   const [lineHeight, setLineHeight] = useState<LineHeight>('relaxed');
   const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareContent, setShareContent] = useState<{ title: string; url: string } | null>(null);
 
   const fontSizeClassMap: Record<FontSize, string> = {
     base: 'text-base',
@@ -32,11 +35,22 @@ const App: React.FC = () => {
   
   const lowercasedQuery = searchQuery.toLowerCase().trim();
 
+  const handleOpenShareModal = (title: string, slug?: string) => {
+    const baseUrl = window.location.href.split('#')[0].split('?')[0];
+    const url = slug ? `${baseUrl}#${slug}` : baseUrl;
+    setShareContent({ title, url });
+    setIsShareModalOpen(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setIsShareModalOpen(false);
+    setShareContent(null);
+  };
+
   const highlightText = (text: string, highlight: string): React.ReactNode => {
     if (!highlight) {
         return text;
     }
-    // Escape special characters for regex
     const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escapedHighlight})`, 'gi');
     const parts = text.split(regex);
@@ -55,10 +69,43 @@ const App: React.FC = () => {
     );
   };
 
-  const filteredSections = lowercasedQuery === '' ? sections : sections.filter(section => 
-    section.title.toLowerCase().includes(lowercasedQuery) ||
-    section.points.some(point => point.text.toLowerCase().includes(lowercasedQuery))
-  );
+  const getScore = (section: Section, query: string): number => {
+    if (!query) return 1;
+
+    let score = 0;
+    const lowercasedTitle = section.title.toLowerCase();
+
+    // Prioritize exact title match
+    if (lowercasedTitle === query) {
+      score += 100;
+    } 
+    // Partial title match
+    else if (lowercasedTitle.includes(query)) {
+      score += 50;
+    }
+
+    // Keyword in points
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    section.points.forEach(point => {
+      const matches = point.text.toLowerCase().match(regex);
+      if (matches) {
+        score += matches.length * 5; // Score based on number of occurrences
+      }
+    });
+
+    return score;
+  };
+
+  const filteredSections = lowercasedQuery === ''
+    ? sections
+    : sections
+        .map(section => ({
+          ...section,
+          score: getScore(section, lowercasedQuery),
+        }))
+        .filter(section => section.score > 0)
+        .sort((a, b) => b.score - a.score);
+
 
   const introductionMatch = lowercasedQuery === '' ||
     introduction.title.toLowerCase().includes(lowercasedQuery) ||
@@ -73,6 +120,7 @@ const App: React.FC = () => {
         onToggleSettings={() => setShowSettings(!showSettings)} 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onShare={() => handleOpenShareModal('محسنات الصياغة القانونية')}
       />
       
       <SettingsPanel
@@ -82,6 +130,12 @@ const App: React.FC = () => {
         onFontSizeChange={setFontSize}
         lineHeight={lineHeight}
         onLineHeightChange={setLineHeight}
+      />
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={handleCloseShareModal}
+        content={shareContent}
       />
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
@@ -116,13 +170,15 @@ const App: React.FC = () => {
               {/* Content Sections */}
               {filteredSections.length > 0 ? (
                 <div className="space-y-12">
-                  {filteredSections.map((section, index) => (
+                  {filteredSections.map((section) => (
                     <ContentSection
-                      key={index}
+                      key={section.title}
                       title={section.title}
                       points={section.points}
                       textClasses={textClasses}
                       searchQuery={searchQuery}
+                      onShare={handleOpenShareModal}
+                      allSections={sections}
                     />
                   ))}
                 </div>
