@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ContentSection from './components/ContentSection';
@@ -8,11 +8,13 @@ import SettingsPanel from './components/SettingsPanel';
 import ShareModal from './components/ShareModal';
 import { introduction as enhancementsIntro, sections as enhancementsSections, Section } from './data/content';
 import { introduction as caseStudyIntro, sections as caseStudySections } from './data/caseStudyContent';
+import { introduction as newCaseIntro, sections as newCaseSections } from './data/newCaseContent';
+import { introduction as judicialVerdictIntro, sections as judicialVerdictSections } from './data/judicialVerdictContent';
 import { highlightText } from './utils';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
-export type DocumentType = 'enhancements' | 'caseStudy';
+export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict';
 
 const documents = {
   enhancements: {
@@ -27,6 +29,27 @@ const documents = {
     introduction: caseStudyIntro,
     sections: caseStudySections,
   },
+  statementOfClaim: {
+    title: 'لائحة دعوى',
+    author: 'مقدمة من: المحامية هيفاء بنت فندي الرويلي',
+    introduction: newCaseIntro,
+    sections: newCaseSections,
+  },
+  judicialVerdict: {
+    title: 'صك حكم قضائي',
+    author: 'وزارة العدل - المملكة العربية السعودية',
+    introduction: judicialVerdictIntro,
+    sections: judicialVerdictSections,
+  },
+};
+
+const getInitialDocument = (): DocumentType => {
+  const params = new URLSearchParams(window.location.search);
+  const doc = params.get('doc') as DocumentType;
+  if (doc && Object.keys(documents).includes(doc)) {
+    return doc;
+  }
+  return 'enhancements';
 };
 
 const App: React.FC = () => {
@@ -36,7 +59,28 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareContent, setShareContent] = useState<{ title: string; url: string } | null>(null);
-  const [activeDocument, setActiveDocument] = useState<DocumentType>('enhancements');
+  const [activeDocument, setActiveDocument] = useState<DocumentType>(getInitialDocument());
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveDocument(getInitialDocument());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  const handleDocumentChange = (doc: DocumentType) => {
+    setActiveDocument(doc);
+    const url = new URL(window.location.href);
+    url.searchParams.set('doc', doc);
+    // Prevent pushState on blob URLs which causes a SecurityError in sandboxed environments
+    if (window.location.protocol !== 'blob:') {
+      window.history.pushState({ doc }, '', url);
+    }
+  };
 
   const currentDoc = documents[activeDocument];
   const { introduction, sections } = currentDoc;
@@ -120,7 +164,7 @@ const App: React.FC = () => {
         onSearchChange={setSearchQuery}
         onShare={() => handleOpenShareModal(currentDoc.title)}
         activeDocument={activeDocument}
-        onDocumentChange={setActiveDocument}
+        onDocumentChange={handleDocumentChange}
         documents={documents}
       />
       

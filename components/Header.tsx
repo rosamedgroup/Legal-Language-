@@ -29,6 +29,12 @@ const DocumentButton: React.FC<{
   </button>
 );
 
+const docButtonLabels: Record<DocumentType, string> = {
+    enhancements: 'محسنات الصياغة',
+    caseStudy: 'دراسة حالة',
+    statementOfClaim: 'لائحة دعوى',
+    judicialVerdict: 'حكم قضائي',
+};
 
 const Header: React.FC<HeaderProps> = ({ 
   onToggleSettings, 
@@ -45,13 +51,16 @@ const Header: React.FC<HeaderProps> = ({
     <header className="py-8 bg-slate-900/70 backdrop-blur-sm border-b border-slate-700/50 relative">
       <div className="container mx-auto text-center px-4">
         
-        <div className="flex justify-center gap-2 sm:gap-4 mb-6">
-            <DocumentButton onClick={() => onDocumentChange('enhancements')} isActive={activeDocument === 'enhancements'}>
-                محسنات الصياغة
-            </DocumentButton>
-            <DocumentButton onClick={() => onDocumentChange('caseStudy')} isActive={activeDocument === 'caseStudy'}>
-                دراسة حالة
-            </DocumentButton>
+        <div className="flex justify-center flex-wrap gap-2 sm:gap-4 mb-6">
+            {(Object.keys(docButtonLabels) as DocumentType[]).map((docKey) => (
+                <DocumentButton 
+                    key={docKey} 
+                    onClick={() => onDocumentChange(docKey)} 
+                    isActive={activeDocument === docKey}
+                >
+                    {docButtonLabels[docKey]}
+                </DocumentButton>
+            ))}
         </div>
 
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-wide">
