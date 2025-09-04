@@ -19,6 +19,28 @@ export const slugify = (text: string) => {
     .replace(/-+$/, ''); // Trim hyphens from the end
 };
 
+// Cache for compiled regular expressions to avoid re-creation on every call.
+const regexCache = new Map<string, RegExp>();
+
+const getHighlightRegex = (highlight: string): RegExp => {
+    if (regexCache.has(highlight)) {
+        return regexCache.get(highlight)!;
+    }
+    // Escape special characters for regex
+    const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedHighlight})`, 'gi');
+    
+    // Simple cache eviction to prevent memory leaks in long-running sessions
+    if (regexCache.size > 50) {
+        const firstKey = regexCache.keys().next().value;
+        regexCache.delete(firstKey);
+    }
+    
+    regexCache.set(highlight, regex);
+    return regex;
+};
+
+
 /**
  * Highlights a search term within a string by wrapping it in a <mark> tag.
  * @param text The text to search within.
@@ -30,13 +52,10 @@ export const highlightText = (text: string, highlight: string): React.ReactNode 
     if (!lowercasedHighlight) {
         return text;
     }
-    // Escape special characters for regex
-    const escapedHighlight = lowercasedHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedHighlight})`, 'gi');
+
+    const regex = getHighlightRegex(lowercasedHighlight);
     const parts = text.split(regex);
-    // FIX: The original code used JSX in a .ts file, which is not allowed and caused parsing errors.
-    // Re-written using React.createElement to be valid in a .ts file. An array of React
-    // nodes is a valid React.ReactNode, so this works correctly.
+    
     return parts.map((part, i) =>
         part.toLowerCase() === lowercasedHighlight ? (
             React.createElement('mark', {
