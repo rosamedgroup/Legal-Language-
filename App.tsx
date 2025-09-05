@@ -1,7 +1,6 @@
-
+// FIX: Corrected import statement for useState and useEffect.
 import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ContentSection from './components/ContentSection';
@@ -11,6 +10,7 @@ import ShareModal from './components/ShareModal';
 import BackToTopButton from './components/BackToTopButton';
 import { Section } from './data/content';
 import { highlightText, slugify } from './utils';
+import { notoKufiArabicFont } from './data/notoKufiArabicFont';
 
 // Static Imports for all documents to ensure stability
 import * as enhancementsContent from './data/content';
@@ -21,6 +21,8 @@ import * as judicialVerdictContent from './data/judicialVerdictContent';
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
 export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict';
+// FIX: Changed Bookmarks to be a partial record to allow initialization with an empty object and fix type errors.
+export type Bookmarks = Partial<Record<DocumentType, string[]>>;
 
 interface DocumentContent {
   introduction: any;
@@ -74,6 +76,8 @@ const App: React.FC = () => {
   const [activeDocument, setActiveDocument] = useState<DocumentType>(getInitialDocument());
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [bookmarks, setBookmarks] = useState<Bookmarks>({});
+  const [selectedSectionsForExport, setSelectedSectionsForExport] = useState<string[]>([]);
 
   // Debounce search input
   useEffect(() => {
@@ -96,6 +100,53 @@ const App: React.FC = () => {
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
+  
+  // Load bookmarks from localStorage on initial render
+  useEffect(() => {
+    try {
+      const storedBookmarks = localStorage.getItem('legal_drafting_bookmarks');
+      if (storedBookmarks) {
+        setBookmarks(JSON.parse(storedBookmarks));
+      }
+    } catch (error)
+    {
+      console.error("Failed to parse bookmarks from localStorage", error);
+      setBookmarks({});
+    }
+  }, []);
+
+  // When the document changes, select all sections by default for export.
+  useEffect(() => {
+    const currentDoc = documents[activeDocument];
+    const allSectionSlugs = [
+      ...(currentDoc.content.introduction.title ? ['introduction'] : []),
+      ...currentDoc.content.sections.map(s => slugify(s.title))
+    ];
+    setSelectedSectionsForExport(allSectionSlugs);
+  }, [activeDocument]);
+
+
+  const toggleBookmark = (docId: DocumentType, sectionSlug: string) => {
+    setBookmarks(prevBookmarks => {
+      const docBookmarks = prevBookmarks[docId] || [];
+      const newDocBookmarks = docBookmarks.includes(sectionSlug)
+        ? docBookmarks.filter(slug => slug !== sectionSlug)
+        : [...docBookmarks, sectionSlug];
+      
+      const newBookmarks = {
+        ...prevBookmarks,
+        [docId]: newDocBookmarks,
+      };
+
+      try {
+        localStorage.setItem('legal_drafting_bookmarks', JSON.stringify(newBookmarks));
+      } catch (error) {
+        console.error("Failed to save bookmarks to localStorage", error);
+      }
+      
+      return newBookmarks;
+    });
+  };
 
   const handleDocumentChange = (doc: DocumentType) => {
     if (doc === activeDocument) return;
@@ -115,88 +166,184 @@ const App: React.FC = () => {
   };
 
   const handleExportPDF = async () => {
-    const contentElement = document.getElementById('printable-content');
-    if (!contentElement) {
-        console.error("Printable content not found!");
+    if (selectedSectionsForExport.length === 0) {
+        alert("Please select at least one section to export.");
         return;
     }
 
     setIsGeneratingPDF(true);
+    setShowSettings(false);
 
-    try {
-        const canvas = await html2canvas(contentElement, {
-            scale: 2, // Use a higher scale for better resolution
-            useCORS: true,
-            backgroundColor: '#1e293b', // Match the content background (slate-800)
-            logging: false, // Suppress html2canvas console logs
-            scrollX: 0, // Ensure capture starts from the very top-left
-            scrollY: 0,
-            windowWidth: contentElement.scrollWidth, // Capture the full width of the content
-            windowHeight: contentElement.scrollHeight, // Capture the full height of the content
-            onclone: (clonedDoc) => {
-                // Hide elements that shouldn't appear in the PDF
-                clonedDoc.querySelectorAll('button[aria-label^="Share section"]').forEach(btn => {
-                    (btn as HTMLElement).style.visibility = 'hidden';
+    // 1. Prepare styles for PDF
+    const pdfStyles = document.createElement('style');
+    pdfStyles.id = 'pdf-styles';
+    pdfStyles.textContent = `
+      .pdf-export-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+        visibility: hidden;
+        width: 800px; /* Provide a fixed width for consistent rendering */
+        background-color: #fff !important;
+        font-family: 'Amiri', sans-serif;
+        direction: rtl;
+      }
+      .pdf-export-container * {
+        font-family: 'Amiri', sans-serif !important;
+      }
+      .pdf-export-container .text-gray-200,
+      .pdf-export-container .text-gray-300,
+      .pdf-export-container .text-gray-400 { color: #1e293b !important; }
+      .pdf-export-container h2.text-amber-400 { color: #b45309 !important; } /* darker amber */
+      .pdf-export-container .text-amber-500 { color: #d97706 !important; }
+      .pdf-export-container .border-amber-500 { border-color: #f59e0b !important; }
+      .pdf-export-container .border-amber-500\\/30 { border-color: rgba(245, 158, 11, 0.3) !important; }
+      .pdf-export-container mark {
+        background-color: #fef08a !important; /* yellow-200 */
+        color: #1e293b !important;
+        padding: 1px 3px !important;
+        border-radius: 3px !important;
+      }
+       .pdf-export-container a {
+        color: #2563eb !important;
+        text-decoration: none !important;
+      }
+    `;
+    document.head.appendChild(pdfStyles);
+
+    // 2. Clone selected content for PDF generation
+    const container = document.createElement('div');
+    container.className = 'pdf-export-container';
+    
+    // --- START: Table of Contents Generation ---
+    const currentDoc = documents[activeDocument];
+    const allExportableSections = [
+        ...(currentDoc.content.introduction.title ? [{ title: currentDoc.content.introduction.title, slug: 'introduction' }] : []),
+        ...currentDoc.content.sections.map(s => ({ title: s.title, slug: slugify(s.title) }))
+    ];
+    
+    const selectedSectionDetails = allExportableSections.filter(s => selectedSectionsForExport.includes(s.slug));
+
+    const tocElement = document.createElement('div');
+    tocElement.style.marginBottom = '40px';
+    tocElement.style.pageBreakAfter = 'always';
+
+    const tocTitleEl = document.createElement('h1');
+    tocTitleEl.textContent = 'جدول المحتويات';
+    tocTitleEl.style.fontSize = '22pt';
+    tocTitleEl.style.fontWeight = 'bold';
+    tocTitleEl.style.marginBottom = '20px';
+    tocTitleEl.style.paddingBottom = '10px';
+    tocTitleEl.style.borderBottom = '2px solid #b45309';
+
+    const tocList = document.createElement('ul');
+    tocList.style.listStyle = 'none';
+    tocList.style.paddingRight = '0';
+    tocList.style.lineHeight = '1.8';
+
+    selectedSectionDetails.forEach(({ title, slug }) => {
+        const listItem = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = `#${slug}`;
+        link.textContent = title;
+        link.style.fontSize = '12pt';
+        listItem.appendChild(link);
+        tocList.appendChild(listItem);
+    });
+    
+    tocElement.appendChild(tocTitleEl);
+    tocElement.appendChild(tocList);
+    container.appendChild(tocElement);
+    // --- END: Table of Contents Generation ---
+
+    if (selectedSectionsForExport.includes('introduction')) {
+        const introElement = document.getElementById('introduction-section');
+        if (introElement) {
+            const introClone = introElement.cloneNode(true) as HTMLElement;
+            introClone.id = 'introduction'; // Set ID to match the slug for TOC link
+            introClone.style.marginBottom = '40px';
+            container.appendChild(introClone);
+        }
+    }
+
+    const currentSections = documents[activeDocument].content.sections;
+    currentSections.forEach(section => {
+        const slug = slugify(section.title);
+        if (selectedSectionsForExport.includes(slug)) {
+            const sectionElement = document.getElementById(slug);
+            if (sectionElement) {
+                const sectionClone = sectionElement.cloneNode(true) as HTMLElement;
+                sectionClone.querySelectorAll('button[aria-label^="Share section"], button[aria-label^="Bookmark"], button[aria-label^="Remove bookmark"]').forEach(btn => {
+                    (btn as HTMLElement).style.display = 'none';
                 });
+                sectionClone.style.marginBottom = '40px';
+                container.appendChild(sectionClone);
             }
-        });
-
-        const imgData = canvas.toDataURL('image/png', 1.0); // Get image data with full quality
+        }
+    });
+    
+    document.body.appendChild(container);
+    
+    try {
         const pdf = new jsPDF({
             orientation: 'p',
-            unit: 'px',
+            unit: 'pt',
             format: 'a4',
             putOnlyUsedFonts: true,
-            floatPrecision: 16
         });
 
-        const margin = 40; // 40px margin on all sides
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const contentWidth = pdfWidth - margin * 2;
-        const contentHeight = pdfHeight - margin * 2;
+        pdf.addFileToVFS('Amiri-Regular.ttf', notoKufiArabicFont);
+        pdf.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+        pdf.setFont('Amiri');
 
-        const imgProps = pdf.getImageProperties(imgData);
-        // Calculate the scaled image height to maintain aspect ratio within the PDF's content width
-        const totalImageHeight = (imgProps.height * contentWidth) / imgProps.width;
+        await pdf.html(container, {
+            callback: (doc) => {
+                const totalPages = doc.internal.pages.length - 1; // jsPDF 2.x bug, length is pages length + 1
+                const documentTitle = documents[activeDocument].title;
+                const documentAuthor = documents[activeDocument].author;
 
-        let position = 0; // This will be the negative Y offset for slicing the image
-        const totalPages = Math.ceil(totalImageHeight / contentHeight);
-        const documentTitle = documents[activeDocument].title;
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    doc.setFont('Amiri', 'normal');
+                    doc.setTextColor('#64748b');
+                    doc.setFontSize(9);
+                    
+                    doc.text(documentAuthor, 40, 35, { align: 'left', lang: 'ar' } as any);
+                    doc.text(documentTitle, doc.internal.pageSize.getWidth() - 40, 35, { align: 'right', lang: 'ar' } as any);
 
-        // Helper function to add consistent headers and footers to each page
-        const addHeaderAndFooter = (pageNumber: number) => {
-            pdf.setFontSize(9);
-            pdf.setTextColor('#94a3b8'); // Use a theme-consistent color (slate-400)
+                    const pageStr = `${i} / ${totalPages}`;
+                    const pageStrWidth = doc.getStringUnitWidth(pageStr) * doc.getFontSize() / doc.internal.scaleFactor;
+                    doc.text(pageStr, doc.internal.pageSize.getWidth() / 2 - pageStrWidth / 2, doc.internal.pageSize.getHeight() - 30);
+                }
 
-            // Header: A proper Arabic title would require embedding a compatible font.
-            // This uses a generated English title as a robust fallback.
-            const englishDocumentTitle = activeDocument.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-            pdf.text(englishDocumentTitle, margin, margin / 2, { align: 'left' });
-
-            // Footer: Page numbering
-            const pageStr = `Page ${pageNumber} of ${totalPages}`;
-            const pageStrWidth = pdf.getStringUnitWidth(pageStr) * pdf.getFontSize() / pdf.internal.scaleFactor;
-            pdf.text(pageStr, pdfWidth - margin - pageStrWidth, pdfHeight - margin / 2);
-        };
-
-        // Loop to create pages and add slices of the captured image
-        for (let i = 1; i <= totalPages; i++) {
-            if (i > 1) pdf.addPage();
-            // Calculate the negative offset to "move" the image up for each new page
-            position = -(contentHeight * (i - 1));
-            pdf.addImage(imgData, 'PNG', margin, position + margin, contentWidth, totalImageHeight);
-            addHeaderAndFooter(i);
-        }
-        
-        const fileName = `${slugify(documentTitle)}.pdf`;
-        pdf.save(fileName);
+                const fileName = `${slugify(documentTitle)}.pdf`;
+                doc.save(fileName);
+            },
+            margin: [50, 40, 50, 40],
+            autoPaging: 'text',
+            width: 515,
+            windowWidth: 800,
+            fontFaces: [{
+                family: 'Amiri',
+                style: 'normal',
+                weight: 'normal',
+                src: [{ url: 'Amiri-Regular.ttf', format: 'truetype' }] 
+            }],
+            // FIX: Removed the 'dpi' property from html2canvas options as it is deprecated and caused a type error. The 'scale' property is already being used to control the resolution of the generated PDF.
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true,
+            }
+        });
 
     } catch (error) {
         console.error("Error generating PDF:", error);
     } finally {
+        document.body.removeChild(container);
+        document.head.removeChild(pdfStyles);
         setIsGeneratingPDF(false);
-        setShowSettings(false); // Close settings panel after export
     }
   };
 
@@ -280,6 +427,12 @@ const App: React.FC = () => {
     (introduction.paragraphs && introduction.paragraphs.some(p => p.toLowerCase().includes(lowercasedQuery))) ||
     (introduction.sections && introduction.sections.some(s => s.toLowerCase().includes(lowercasedQuery))) ||
     (introduction.conclusion && introduction.conclusion.toLowerCase().includes(lowercasedQuery)));
+    
+  // Prepare bookmarked sections for the current document
+  const currentDocBookmarks = bookmarks[activeDocument] || [];
+  const bookmarkedSections = sections.filter(section => 
+    currentDocBookmarks.includes(slugify(section.title))
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-gray-200 flex flex-col">
@@ -303,6 +456,10 @@ const App: React.FC = () => {
         isGenerating={isGeneratingPDF}
         onExportPDF={handleExportPDF}
         onResetSettings={handleResetSettings}
+        sections={sections}
+        introductionTitle={introduction.title}
+        selectedSections={selectedSectionsForExport}
+        onSelectedSectionsChange={setSelectedSectionsForExport}
       />
 
       <ShareModal
@@ -314,14 +471,18 @@ const App: React.FC = () => {
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
         <div className={`bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-10 transition-all ease-in-out duration-300 ${isTransitioning ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'}`}>
           
-            <div className="lg:flex lg:gap-12">
+            <div id="printable-content" className="lg:flex lg:gap-12">
               <aside className="lg:w-1/3 xl:w-1/4">
-                <TableOfContents sections={filteredSections} />
+                <TableOfContents
+                  sections={filteredSections}
+                  bookmarkedSections={bookmarkedSections}
+                  onToggleBookmark={(slug) => toggleBookmark(activeDocument, slug)}
+                />
               </aside>
 
-              <div id="printable-content" className="flex-1 mt-12 lg:mt-0">
+              <div className="flex-1 mt-12 lg:mt-0">
                   {introductionMatch && introduction.title && (
-                    <div className="mb-12 border-b-2 border-amber-500/30 pb-8">
+                    <div id="introduction-section" className="mb-12 border-b-2 border-amber-500/30 pb-8">
                       <h2 className="text-3xl md:text-4xl font-bold text-amber-400 mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
                       {introduction.paragraphs && (
                         <div className={`space-y-4 text-gray-300 ${textClasses}`}>
@@ -355,6 +516,8 @@ const App: React.FC = () => {
                           searchQuery={searchQuery}
                           onShare={handleOpenShareModal}
                           allSections={sections}
+                          isBookmarked={currentDocBookmarks.includes(slugify(section.title))}
+                          onToggleBookmark={() => toggleBookmark(activeDocument, slugify(section.title))}
                         />
                       ))}
                     </div>

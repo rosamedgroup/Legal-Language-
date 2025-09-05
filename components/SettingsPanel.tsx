@@ -1,5 +1,6 @@
-
 import React from 'react';
+import { Section } from '../data/content';
+import { slugify } from '../utils';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
@@ -14,6 +15,10 @@ interface SettingsPanelProps {
   isGenerating: boolean;
   onExportPDF: () => void;
   onResetSettings: () => void;
+  sections: Section[];
+  introductionTitle?: string;
+  selectedSections: string[];
+  onSelectedSectionsChange: (selected: string[]) => void;
 }
 
 const SettingsButton: React.FC<{
@@ -43,8 +48,35 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   isGenerating,
   onExportPDF,
   onResetSettings,
+  sections,
+  introductionTitle,
+  selectedSections,
+  onSelectedSectionsChange,
 }) => {
   if (!isOpen) return null;
+
+  const allExportableItems = [
+    ...(introductionTitle ? [{ title: introductionTitle, slug: 'introduction' }] : []),
+    ...sections.map(s => ({ title: s.title, slug: slugify(s.title) })),
+  ];
+
+  const handleToggleSection = (slug: string) => {
+    const newSelection = selectedSections.includes(slug)
+      ? selectedSections.filter(s => s !== slug)
+      : [...selectedSections, slug];
+    onSelectedSectionsChange(newSelection);
+  };
+
+  const handleSelectAll = () => {
+    onSelectedSectionsChange(allExportableItems.map(item => item.slug));
+  };
+
+  const handleDeselectAll = () => {
+    onSelectedSectionsChange([]);
+  };
+
+  const allSelected = selectedSections.length === allExportableItems.length;
+  const noneSelected = selectedSections.length === 0;
 
   return (
     <div
@@ -144,10 +176,38 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <label className="block text-sm font-medium text-gray-300 mb-2">
           Export Document
         </label>
+        
+        <div className="flex justify-between items-center mb-2">
+          <button
+            onClick={allSelected ? handleDeselectAll : handleSelectAll}
+            className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors"
+          >
+            {allSelected ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+          </button>
+          <span className="text-xs text-gray-400">
+            {selectedSections.length} / {allExportableItems.length} محدد
+          </span>
+        </div>
+
+        <div className="max-h-48 overflow-y-auto bg-slate-900/50 p-3 rounded-lg border border-slate-700 space-y-2">
+          {allExportableItems.map(({ title, slug }) => (
+            <label key={slug} className="flex items-center space-x-3 cursor-pointer p-2 rounded-md hover:bg-slate-700/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={selectedSections.includes(slug)}
+                onChange={() => handleToggleSection(slug)}
+                className="form-checkbox h-5 w-5 bg-slate-800 border-slate-600 text-amber-500 focus:ring-amber-500 rounded"
+                style={{float: 'right', marginLeft: '0.75rem'}}
+              />
+              <span className="text-gray-300 text-sm select-none">{title}</span>
+            </label>
+          ))}
+        </div>
+
         <button
           onClick={onExportPDF}
-          disabled={isGenerating}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm rounded-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-gray-200 font-bold disabled:bg-slate-600/50 disabled:cursor-not-allowed"
+          disabled={isGenerating || noneSelected}
+          className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 text-sm rounded-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-gray-200 font-bold disabled:bg-slate-600/50 disabled:cursor-not-allowed disabled:text-gray-500"
         >
           {isGenerating ? (
             <>
@@ -162,7 +222,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
-              <span>تصدير كملف PDF</span>
+              <span>{noneSelected ? 'اختر أقسام للتصدير' : `تصدير (${selectedSections.length}) قسم كملف PDF`}</span>
             </>
           )}
         </button>
