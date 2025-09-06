@@ -395,13 +395,9 @@ const App: React.FC = () => {
             autoPaging: 'text',
             width: 515,
             windowWidth: 800,
-            fontFaces: [{
-                family: 'Amiri',
-                style: 'normal',
-                weight: 'normal',
-                src: [{ url: 'Amiri-Regular.ttf', format: 'truetype' }] 
-            }],
-            // FIX: Removed the 'dpi' property from html2canvas options as it is deprecated and caused a type error. The 'scale' property is already being used to control the resolution of the generated PDF.
+            // FIX: Removed the redundant `fontFaces` option. The font is already registered
+            // globally with `addFont`, and this option was causing conflicts with the renderer,
+            // leading to a "cannot read properties of undefined (reading 'widths')" error.
             html2canvas: {
                 scale: 2,
                 useCORS: true,
