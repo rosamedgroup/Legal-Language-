@@ -24,6 +24,11 @@ export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | '
 // FIX: Changed Bookmarks to be a partial record to allow initialization with an empty object and fix type errors.
 export type Bookmarks = Partial<Record<DocumentType, string[]>>;
 
+interface AppSettings {
+  fontSize: FontSize;
+  lineHeight: LineHeight;
+}
+
 interface DocumentContent {
   introduction: any;
   sections: Section[];
@@ -101,19 +106,34 @@ const App: React.FC = () => {
     };
   }, []);
   
-  // Load bookmarks from localStorage on initial render
+  // Load settings and bookmarks from localStorage on initial render
   useEffect(() => {
     try {
       const storedBookmarks = localStorage.getItem('legal_drafting_bookmarks');
       if (storedBookmarks) {
         setBookmarks(JSON.parse(storedBookmarks));
       }
-    } catch (error)
-    {
-      console.error("Failed to parse bookmarks from localStorage", error);
-      setBookmarks({});
+      const storedSettings = localStorage.getItem('legal_drafting_settings');
+      if (storedSettings) {
+        const settings: AppSettings = JSON.parse(storedSettings);
+        setFontSize(settings.fontSize || 'lg');
+        setLineHeight(settings.lineHeight || 'relaxed');
+      }
+    } catch (error) {
+      console.error("Failed to parse settings from localStorage", error);
     }
   }, []);
+  
+    // Save settings to localStorage whenever they change
+  useEffect(() => {
+    try {
+        const settings: AppSettings = { fontSize, lineHeight };
+        localStorage.setItem('legal_drafting_settings', JSON.stringify(settings));
+    } catch (error) {
+        console.error("Failed to save settings to localStorage", error);
+    }
+  }, [fontSize, lineHeight]);
+
 
   // When the document changes, select all sections by default for export.
   useEffect(() => {
@@ -178,36 +198,102 @@ const App: React.FC = () => {
     const pdfStyles = document.createElement('style');
     pdfStyles.id = 'pdf-styles';
     pdfStyles.textContent = `
+      /* --- PDF Export Styles --- */
+
+      /* General container setup */
       .pdf-export-container {
         position: absolute;
         top: 0;
         left: 0;
         z-index: -1;
         visibility: hidden;
-        width: 800px; /* Provide a fixed width for consistent rendering */
+        width: 800px;
         background-color: #fff !important;
         font-family: 'Amiri', sans-serif;
         direction: rtl;
+        color: #1f2937; /* A slightly softer black */
       }
+
+      /* Reset and base styles for all elements */
       .pdf-export-container * {
         font-family: 'Amiri', sans-serif !important;
+        color: inherit !important;
+        background-color: transparent !important;
+        border-color: #e5e7eb !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
       }
-      .pdf-export-container .text-gray-200,
-      .pdf-export-container .text-gray-300,
-      .pdf-export-container .text-gray-400 { color: #1e293b !important; }
-      .pdf-export-container h2.text-amber-400 { color: #b45309 !important; } /* darker amber */
-      .pdf-export-container .text-amber-500 { color: #d97706 !important; }
-      .pdf-export-container .border-amber-500 { border-color: #f59e0b !important; }
-      .pdf-export-container .border-amber-500\\/30 { border-color: rgba(245, 158, 11, 0.3) !important; }
-      .pdf-export-container mark {
-        background-color: #fef08a !important; /* yellow-200 */
-        color: #1e293b !important;
-        padding: 1px 3px !important;
-        border-radius: 3px !important;
+
+      /* Typography */
+      .pdf-export-container h1, .pdf-export-container h2, .pdf-export-container h3 {
+        color: #111827 !important;
+        page-break-after: avoid; /* Prevent page breaks right after a heading */
+        margin-bottom: 1rem;
+        font-weight: bold;
       }
-       .pdf-export-container a {
-        color: #2563eb !important;
+      .pdf-export-container h1 { font-size: 22pt; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; }
+      .pdf-export-container h2 { font-size: 18pt; margin-top: 2rem; }
+      .pdf-export-container h3 { font-size: 14pt; margin-top: 1.5rem; }
+
+      .pdf-export-container p, .pdf-export-container li {
+        font-size: 12pt;
+        line-height: 1.7;
+        orphans: 3; /* At least 3 lines at the bottom of a page */
+        widows: 3;  /* At least 3 lines at the top of a page */
+        page-break-inside: avoid;
+      }
+      
+      .pdf-export-container ol, .pdf-export-container ul {
+        padding-right: 25px; /* Deeper indent for lists */
+        margin-bottom: 1rem;
+      }
+      
+      .pdf-export-container li span.font-bold {
+        font-weight: bold !important;
+      }
+
+      /* Links */
+      .pdf-export-container a {
+        color: #3b82f6 !important;
         text-decoration: none !important;
+      }
+
+      /* Highlights */
+      .pdf-export-container mark {
+        background-color: #fef9c3 !important; /* Lighter yellow */
+        color: #1f2937 !important;
+        padding: 0 3px;
+        border-radius: 2px;
+      }
+
+      /* Layout & Page Breaks */
+      .pdf-export-container > section, 
+      .pdf-export-container > div[id^="introduction-section"] {
+        margin-bottom: 40px;
+        page-break-inside: avoid; /* Attempt to keep sections from splitting */
+      }
+       .pdf-export-container > *:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Table of Contents */
+      #pdf-toc-wrapper {
+        page-break-after: always; /* Force a page break after the TOC */
+        margin-bottom: 40px;
+      }
+      #pdf-toc-wrapper ul {
+        list-style: none;
+        padding-right: 0;
+        line-height: 2;
+      }
+      #pdf-toc-wrapper li a {
+        font-size: 12pt;
+      }
+
+      /* Elements to hide in the PDF */
+      .pdf-export-container button,
+      .pdf-export-container .related-sections-container {
+        display: none !important;
       }
     `;
     document.head.appendChild(pdfStyles);
@@ -226,28 +312,18 @@ const App: React.FC = () => {
     const selectedSectionDetails = allExportableSections.filter(s => selectedSectionsForExport.includes(s.slug));
 
     const tocElement = document.createElement('div');
-    tocElement.style.marginBottom = '40px';
-    tocElement.style.pageBreakAfter = 'always';
+    tocElement.id = 'pdf-toc-wrapper';
 
     const tocTitleEl = document.createElement('h1');
     tocTitleEl.textContent = 'جدول المحتويات';
-    tocTitleEl.style.fontSize = '22pt';
-    tocTitleEl.style.fontWeight = 'bold';
-    tocTitleEl.style.marginBottom = '20px';
-    tocTitleEl.style.paddingBottom = '10px';
-    tocTitleEl.style.borderBottom = '2px solid #b45309';
 
     const tocList = document.createElement('ul');
-    tocList.style.listStyle = 'none';
-    tocList.style.paddingRight = '0';
-    tocList.style.lineHeight = '1.8';
 
     selectedSectionDetails.forEach(({ title, slug }) => {
         const listItem = document.createElement('li');
         const link = document.createElement('a');
         link.href = `#${slug}`;
         link.textContent = title;
-        link.style.fontSize = '12pt';
         listItem.appendChild(link);
         tocList.appendChild(listItem);
     });
@@ -262,7 +338,6 @@ const App: React.FC = () => {
         if (introElement) {
             const introClone = introElement.cloneNode(true) as HTMLElement;
             introClone.id = 'introduction'; // Set ID to match the slug for TOC link
-            introClone.style.marginBottom = '40px';
             container.appendChild(introClone);
         }
     }
@@ -274,10 +349,6 @@ const App: React.FC = () => {
             const sectionElement = document.getElementById(slug);
             if (sectionElement) {
                 const sectionClone = sectionElement.cloneNode(true) as HTMLElement;
-                sectionClone.querySelectorAll('button[aria-label^="Share section"], button[aria-label^="Bookmark"], button[aria-label^="Remove bookmark"]').forEach(btn => {
-                    (btn as HTMLElement).style.display = 'none';
-                });
-                sectionClone.style.marginBottom = '40px';
                 container.appendChild(sectionClone);
             }
         }
@@ -306,7 +377,7 @@ const App: React.FC = () => {
                 for (let i = 1; i <= totalPages; i++) {
                     doc.setPage(i);
                     doc.setFont('Amiri', 'normal');
-                    doc.setTextColor('#64748b');
+                    doc.setTextColor('#6b7280');
                     doc.setFontSize(9);
                     
                     doc.text(documentAuthor, 40, 35, { align: 'left', lang: 'ar' } as any);
@@ -435,7 +506,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-gray-200 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
       <Header 
         onToggleSettings={() => setShowSettings(!showSettings)} 
         searchQuery={inputValue}
@@ -468,11 +539,10 @@ const App: React.FC = () => {
         content={shareContent}
       />
       
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
-        <div className={`bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-10 transition-all ease-in-out duration-300 ${isTransitioning ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'}`}>
-          
-            <div id="printable-content" className="lg:flex lg:gap-12">
-              <aside className="lg:w-1/3 xl:w-1/4">
+      <main className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+            <div id="printable-content" className="lg:flex lg:gap-8">
+              <aside className="lg:w-64">
                 <TableOfContents
                   sections={filteredSections}
                   bookmarkedSections={bookmarkedSections}
@@ -480,26 +550,26 @@ const App: React.FC = () => {
                 />
               </aside>
 
-              <div className="flex-1 mt-12 lg:mt-0">
+              <div className="flex-1 mt-12 lg:mt-0 bg-white p-6 md:p-8 rounded-lg shadow-sm border border-slate-200/80">
                   {introductionMatch && introduction.title && (
-                    <div id="introduction-section" className="mb-12 border-b-2 border-amber-500/30 pb-8">
-                      <h2 className="text-3xl md:text-4xl font-bold text-amber-400 mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
+                    <div id="introduction-section" className="mb-12 border-b border-slate-200 pb-8">
+                      <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
                       {introduction.paragraphs && (
-                        <div className={`space-y-4 text-gray-300 ${textClasses}`}>
+                        <div className={`space-y-4 text-slate-700 ${textClasses}`}>
                           {introduction.paragraphs.map((p, index) => (
                             <p key={index}>{highlightText(p, lowercasedQuery)}</p>
                           ))}
                         </div>
                       )}
                       {introduction.sections && (
-                        <div className={`mt-6 space-y-2 text-gray-300 ${textClasses}`}>
+                        <div className={`mt-6 space-y-2 text-slate-700 ${textClasses}`}>
                             {introduction.sections.map((s, index) => (
                                 <p key={index} className="pl-4">{highlightText(s, lowercasedQuery)}</p>
                             ))}
                         </div>
                       )}
                       {introduction.conclusion && (
-                        <p className={`mt-6 text-gray-300 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
+                        <p className={`mt-6 text-slate-700 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
                       )}
                     </div>
                   )}
@@ -523,7 +593,7 @@ const App: React.FC = () => {
                     </div>
                   ) : (
                     searchQuery && !introductionMatch && (
-                      <div className="text-center py-12 text-gray-400">
+                      <div className="text-center py-12 text-slate-500">
                         <h3 className="text-2xl font-bold mb-2">لا توجد نتائج</h3>
                         <p>لم نتمكن من العثور على أي نتائج لبحثك عن "{searchQuery}".</p>
                       </div>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Section } from './data/content';
 
@@ -58,10 +57,7 @@ export const highlightText = (text: string, highlight: string): React.ReactNode 
     
     return parts.map((part, i) =>
         part.toLowerCase() === lowercasedHighlight ? (
-            React.createElement('mark', {
-                key: i,
-                className: "bg-amber-400 text-slate-900 px-1 rounded-sm"
-            }, part)
+            React.createElement('mark', { key: i }, part)
         ) : (
             part
         )

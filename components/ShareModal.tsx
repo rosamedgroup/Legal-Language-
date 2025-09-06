@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 interface ShareModalProps {
@@ -35,50 +34,50 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, content }) => 
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/30 z-40"
         onClick={onClose}
         aria-hidden="true"
       ></div>
       <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-lg bg-slate-800/80 backdrop-blur-lg border border-slate-700 rounded-2xl shadow-2xl z-50 p-6"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-lg bg-white rounded-xl shadow-lg z-50 p-6"
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-title"
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 id="share-title" className="text-xl font-bold text-amber-400">
+          <h2 id="share-title" className="text-lg font-bold text-slate-900">
             مشاركة المحتوى
           </h2>
           <button
             onClick={onClose}
             aria-label="Close share dialog"
-            className="p-2 rounded-full hover:bg-slate-700 text-gray-400 hover:text-white transition-colors"
+            className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
             </svg>
           </button>
         </div>
         
-        <div className="mb-6 text-gray-300">
-          <p className="font-semibold">مشاركة "{content.title}"</p>
+        <div className="mb-6 text-slate-600">
+          <p>مشاركة "{content.title}"</p>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center bg-slate-900/50 p-2 rounded-lg">
+          <div className="flex items-center bg-slate-100 border border-slate-300 p-2 rounded-lg">
             <input
               type="text"
               value={content.url}
               readOnly
-              className="flex-1 bg-transparent text-gray-400 px-2 py-1 outline-none"
+              className="flex-1 bg-transparent text-slate-600 px-2 py-1 outline-none text-left"
               aria-label="Shareable link"
             />
             <button
               onClick={handleCopyLink}
-              className={`px-4 py-2 text-sm rounded-md transition-colors duration-200 w-28 text-center ${
+              className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200 w-28 text-center ${
                 copied
-                  ? 'bg-green-500 text-white font-bold'
-                  : 'bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
             >
               {copied ? 'تم النسخ!' : 'نسخ الرابط'}
@@ -87,11 +86,10 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, content }) => 
           
           <a
             href={mailtoLink}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm rounded-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-gray-200 font-bold"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-semibold rounded-md transition-colors duration-200 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555zM0 4.697v7.104l5.803-3.558L0 4.697zM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757zm3.436-.586L16 11.801V4.697l-5.803 3.546z"/>
             </svg>
             <span>مشاركة عبر البريد الإلكتروني</span>
           </a>
