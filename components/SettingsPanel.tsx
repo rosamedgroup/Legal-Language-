@@ -20,6 +20,7 @@ const SettingsButton: React.FC<{
 }> = ({ onClick, isActive, children }) => (
   <button
     onClick={onClick}
+    aria-pressed={isActive}
     className={`px-4 py-2 text-sm rounded-md transition-colors duration-200 flex-1 ${
       isActive
         ? 'bg-white text-blue-600 font-semibold shadow-sm'
@@ -72,10 +73,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <div className="space-y-6">
           {/* Font Size Control */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label id="font-size-label" className="block text-sm font-medium text-slate-700 mb-2">
               حجم الخط
             </label>
-            <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-lg">
+            <div role="group" aria-labelledby="font-size-label" className="flex items-center space-x-2 bg-slate-100 p-1 rounded-lg">
               <SettingsButton
                 onClick={() => onFontSizeChange('base')}
                 isActive={fontSize === 'base'}
@@ -99,10 +100,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {/* Line Spacing Control */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label id="line-height-label" className="block text-sm font-medium text-slate-700 mb-2">
               تباعد الأسطر
             </label>
-            <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-lg">
+            <div role="group" aria-labelledby="line-height-label" className="flex items-center space-x-2 bg-slate-100 p-1 rounded-lg">
               <SettingsButton
                 onClick={() => onLineHeightChange('normal')}
                 isActive={lineHeight === 'normal'}

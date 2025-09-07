@@ -42,26 +42,42 @@ const getHighlightRegex = (highlight: string): RegExp => {
 
 /**
  * Highlights a search term within a string by wrapping it in a <mark> tag.
+ * It also handles markdown-style bolding (**text**).
  * @param text The text to search within.
  * @param highlight The term to highlight.
- * @returns A React Node with the highlighted text.
+ * @returns A React Node with the highlighted and formatted text.
  */
+// FIX: Replaced JSX syntax with React.createElement to resolve TypeScript errors in a .ts file.
 export const highlightText = (text: string, highlight: string): React.ReactNode => {
-    const lowercasedHighlight = highlight.toLowerCase().trim();
-    if (!lowercasedHighlight) {
-        return text;
-    }
+    // Split by bold markdown: **text**
+    const boldRegex = /(\*\*.*?\*\*)/g;
+    const textParts = text.split(boldRegex);
 
-    const regex = getHighlightRegex(lowercasedHighlight);
-    const parts = text.split(regex);
-    
-    return parts.map((part, i) =>
-        part.toLowerCase() === lowercasedHighlight ? (
-            React.createElement('mark', { key: i }, part)
-        ) : (
-            part
-        )
-    );
+    return textParts.map((part, index) => {
+        if (!part) return null;
+        
+        const isBold = part.startsWith('**') && part.endsWith('**');
+        const content = isBold ? part.slice(2, -2) : part;
+
+        const lowercasedHighlight = highlight.toLowerCase().trim();
+        if (!lowercasedHighlight) {
+            return isBold ? React.createElement('strong', { key: index }, content) : content;
+        }
+
+        const regex = getHighlightRegex(lowercasedHighlight);
+        const highlightParts = content.split(regex);
+
+        const renderedContent = highlightParts.map((hp, i) =>
+            hp.toLowerCase() === lowercasedHighlight ?
+                React.createElement('mark', { key: i }, hp)
+                :
+                hp
+        );
+
+        return isBold ? 
+            React.createElement('strong', { key: index }, renderedContent) : 
+            React.createElement(React.Fragment, { key: index }, renderedContent);
+    });
 };
 
 // A basic list of Arabic stop words to ignore during keyword extraction.

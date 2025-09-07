@@ -2,23 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import ContentSection from './components/ContentSection';
 import TableOfContents from './components/TableOfContents';
 import SettingsPanel from './components/SettingsPanel';
 import ShareModal from './components/ShareModal';
 import BackToTopButton from './components/BackToTopButton';
 import { Section } from './data/content';
-import { highlightText, slugify } from './utils';
+import { highlightText, slugify, findRelatedSections } from './utils';
 
 // Static Imports for all documents to ensure stability
 import * as enhancementsContent from './data/content';
 import * as caseStudyContent from './data/caseStudyContent';
 import * as statementOfClaimContent from './data/newCaseContent';
 import * as judicialVerdictContent from './data/judicialVerdictContent';
+import * as newClassificationContent from './data/newClassificationContent';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
-export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict';
+export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict' | 'newClassification';
 // FIX: Changed Bookmarks to be a partial record to allow initialization with an empty object and fix type errors.
 export type Bookmarks = Partial<Record<DocumentType, string[]>>;
 
@@ -26,6 +26,11 @@ interface AppSettings {
   fontSize: FontSize;
   lineHeight: LineHeight;
 }
+
+const defaultSettings: AppSettings = {
+  fontSize: 'lg',
+  lineHeight: 'relaxed',
+};
 
 interface DocumentContent {
   introduction: any;
@@ -52,10 +57,16 @@ const documents = {
     content: statementOfClaimContent,
   },
   judicialVerdict: {
-    title: 'صك حكم قضائي',
-    buttonLabel: 'حكم قضائي',
-    author: 'وزارة العدل - المملكة العربية السعودية',
+    title: 'شکاوی ودعاوى كيدية',
+    buttonLabel: 'دعاوى كيدية',
+    author: 'مجموعة الأحكام القضائية لعام ١٤٣٥هـ',
     content: judicialVerdictContent,
+  },
+  newClassification: {
+    title: 'التصنيف الجديد للدعاوى',
+    buttonLabel: 'تصنيف الدعاوى',
+    author: 'تنسيق: المحامي/ عبد الجميلي | تصنيف: البحوث القانونية عبد الوهاب عبد الحي بن فضل',
+    content: newClassificationContent,
   },
 };
 
@@ -69,8 +80,8 @@ const getInitialDocument = (): DocumentType => {
 };
 
 const App: React.FC = () => {
-  const [fontSize, setFontSize] = useState<FontSize>('lg');
-  const [lineHeight, setLineHeight] = useState<LineHeight>('relaxed');
+  const [fontSize, setFontSize] = useState<FontSize>(defaultSettings.fontSize);
+  const [lineHeight, setLineHeight] = useState<LineHeight>(defaultSettings.lineHeight);
   const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [inputValue, setInputValue] = useState(''); // For immediate input feedback
@@ -112,8 +123,8 @@ const App: React.FC = () => {
       const storedSettings = localStorage.getItem('legal_drafting_settings');
       if (storedSettings) {
         const settings: AppSettings = JSON.parse(storedSettings);
-        setFontSize(settings.fontSize || 'lg');
-        setLineHeight(settings.lineHeight || 'relaxed');
+        setFontSize(settings.fontSize || defaultSettings.fontSize);
+        setLineHeight(settings.lineHeight || defaultSettings.lineHeight);
       }
     } catch (error) {
       console.error("Failed to parse settings from localStorage", error);
@@ -170,8 +181,8 @@ const App: React.FC = () => {
   };
 
   const handleResetSettings = () => {
-    setFontSize('lg');
-    setLineHeight('relaxed');
+    setFontSize(defaultSettings.fontSize);
+    setLineHeight(defaultSettings.lineHeight);
   };
 
 
@@ -320,20 +331,91 @@ const App: React.FC = () => {
                   
                   {filteredSections.length > 0 ? (
                     <div className="space-y-12">
-                      {filteredSections.map((section) => (
-                        <ContentSection
-                          key={section.title}
-                          title={section.title}
-                          points={section.points}
-                          paragraphs={section.paragraphs}
-                          textClasses={textClasses}
-                          searchQuery={searchQuery}
-                          onShare={handleOpenShareModal}
-                          allSections={sections}
-                          isBookmarked={currentDocBookmarks.includes(slugify(section.title))}
-                          onToggleBookmark={() => toggleBookmark(activeDocument, slugify(section.title))}
-                        />
-                      ))}
+                      {filteredSections.map((section) => {
+                        const sectionSlug = slugify(section.title);
+                        const isBookmarked = currentDocBookmarks.includes(sectionSlug);
+                        const relatedSections = findRelatedSections(section.title, sections);
+
+                        return (
+                          <section key={section.title} id={sectionSlug} className="scroll-mt-24">
+                            <div className="flex justify-between items-start mb-5 border-b border-slate-200 pb-4">
+                              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
+                                {highlightText(section.title, searchQuery)}
+                              </h2>
+                              <div className="flex items-center gap-1 -mr-2">
+                                <button
+                                  onClick={() => toggleBookmark(activeDocument, sectionSlug)}
+                                  aria-label={isBookmarked ? `Remove bookmark for section: ${section.title}` : `Bookmark section: ${section.title}`}
+                                  className="p-2 rounded-full hover:bg-slate-200/60 text-slate-500 transition-colors duration-200"
+                                >
+                                  {isBookmarked ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="currentColor" viewBox="0 0 16 16">
+                                      <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/>
+                                    </svg>
+                                  ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
+                                      <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
+                                    </svg>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleOpenShareModal(section.title, sectionSlug)}
+                                  aria-label={`Share section: ${section.title}`}
+                                  className="p-2 rounded-full hover:bg-slate-200/60 text-slate-500 transition-colors duration-200"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
+                                      <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+                                      <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {section.points && (
+                              <ol className="space-y-5">
+                                {section.points.map((point) => (
+                                  <li key={point.id} className={`flex items-start ${textClasses}`}>
+                                    <span className="ml-4 text-lg font-bold text-slate-500">{point.id}.</span>
+                                    <span className="flex-1 text-slate-700">{highlightText(point.text, searchQuery)}</span>
+                                  </li>
+                                ))}
+                              </ol>
+                            )}
+
+                            {section.paragraphs && (
+                              <div className={`space-y-5 text-slate-700 ${textClasses}`}>
+                                  {section.paragraphs.map((paragraph, index) => (
+                                      <p key={index}>{highlightText(paragraph, searchQuery)}</p>
+                                  ))}
+                              </div>
+                            )}
+
+                            {relatedSections.length > 0 && (
+                              <div className="mt-8 pt-6 border-t border-slate-200/80 related-sections-container">
+                                <h3 className="text-base font-semibold text-slate-800 mb-3">
+                                  أقسام ذات صلة
+                                </h3>
+                                <ul className="space-y-2">
+                                  {relatedSections.map((relatedTitle, index) => (
+                                    <li key={index}>
+                                      <a
+                                        href={`#${slugify(relatedTitle)}`}
+                                        className="flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200 group"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="currentColor" viewBox="0 0 16 16">
+                                          <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+                                          <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
+                                        </svg>
+                                        <span>{relatedTitle}</span>
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </section>
+                        )
+                      })}
                     </div>
                   ) : (
                     searchQuery && !introductionMatch && (

@@ -90,20 +90,6 @@ const Header: React.FC<HeaderProps> = ({
               </p>
             </div>
             
-            {!isSearchVisible && (
-              <div className="hidden md:flex items-center gap-2 bg-slate-100/80 p-1 rounded-lg">
-                {(Object.keys(documents) as DocumentType[]).map((docKey) => (
-                    <DocumentButton 
-                        key={docKey} 
-                        onClick={() => onDocumentChange(docKey)} 
-                        isActive={activeDocument === docKey}
-                    >
-                        {documents[docKey].buttonLabel}
-                    </DocumentButton>
-                ))}
-              </div>
-            )}
-            
             <div ref={searchContainerRef} className={`flex items-center gap-1 transition-all duration-300 ${isSearchVisible ? 'w-full max-w-sm' : 'w-auto'}`}>
               <div className={`relative w-full ${!isSearchVisible ? 'hidden' : 'block'}`}>
                   <input
@@ -143,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({
             </div>
         </div>
 
-        <div className="md:hidden flex items-center gap-2 justify-center overflow-x-auto pt-3 mt-3 border-t border-slate-200 no-scrollbar">
+        <nav className="flex items-center gap-2 justify-center overflow-x-auto pt-3 mt-3 border-t border-slate-200 no-scrollbar" aria-label="Document navigation">
             {(Object.keys(documents) as DocumentType[]).map((docKey) => (
                 <DocumentButton 
                     key={docKey} 
@@ -153,7 +139,7 @@ const Header: React.FC<HeaderProps> = ({
                     {documents[docKey].buttonLabel}
                 </DocumentButton>
             ))}
-        </div>
+        </nav>
       </div>
     </header>
   );
