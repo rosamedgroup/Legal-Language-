@@ -370,6 +370,19 @@ const App: React.FC = () => {
                                 </button>
                               </div>
                             </div>
+
+                            {section.metadata && (
+                              <div className="mb-6 bg-slate-50/70 p-4 rounded-lg border border-slate-200">
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                                  {Object.entries(section.metadata).map(([key, value]) => (
+                                    <React.Fragment key={key}>
+                                      <div className="font-semibold text-slate-600">{key}</div>
+                                      <div className="text-slate-800">{value}</div>
+                                    </React.Fragment>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             
                             {section.points && (
                               <ol className="space-y-5">
