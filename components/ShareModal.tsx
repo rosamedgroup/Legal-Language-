@@ -34,24 +34,24 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, content }) => 
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/30 z-40"
+        className="fixed inset-0 bg-black/30 dark:bg-black/50 z-40"
         onClick={onClose}
         aria-hidden="true"
       ></div>
       <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-lg bg-white rounded-xl shadow-lg z-50 p-6"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-lg bg-white dark:bg-slate-800 rounded-xl shadow-lg z-50 p-6"
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-title"
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 id="share-title" className="text-lg font-bold text-slate-900">
+          <h2 id="share-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
             مشاركة المحتوى
           </h2>
           <button
             onClick={onClose}
             aria-label="Close share dialog"
-            className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
+            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
               <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
@@ -59,17 +59,17 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, content }) => 
           </button>
         </div>
         
-        <div className="mb-6 text-slate-600">
+        <div className="mb-6 text-slate-600 dark:text-slate-300">
           <p>مشاركة "{content.title}"</p>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center bg-slate-100 border border-slate-300 p-2 rounded-lg">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 p-2 rounded-lg">
             <input
               type="text"
               value={content.url}
               readOnly
-              className="flex-1 bg-transparent text-slate-600 px-2 py-1 outline-none text-left"
+              className="flex-1 bg-transparent text-slate-600 dark:text-slate-300 px-2 py-1 outline-none text-left"
               aria-label="Shareable link"
             />
             <button
@@ -86,7 +86,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, content }) => 
           
           <a
             href={mailtoLink}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-semibold rounded-md transition-colors duration-200 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-semibold rounded-md transition-colors duration-200 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 dark:text-slate-200 dark:border-slate-500"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
               <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555zM0 4.697v7.104l5.803-3.558L0 4.697zM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757zm3.436-.586L16 11.801V4.697l-5.803 3.546z"/>

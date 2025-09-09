@@ -14,7 +14,6 @@
       }
       body {
         font-family: 'Almarai', sans-serif;
-        background-color: #f8fafc; /* bg-slate-50 */
       }
       mark {
         background-color: #dbeafe; /* bg-blue-100 */
@@ -22,19 +21,44 @@
         padding: 0 3px;
         border-radius: 3px;
       }
+      .dark mark {
+        background-color: #312e81; /* bg-indigo-900 */
+        color: #e0e7ff; /* text-indigo-200 */
+      }
     </style>
+    <script>
+      // Prevents flash of incorrect theme by applying it before React loads.
+      (function() {
+        try {
+          const settingsJSON = localStorage.getItem('legal_drafting_settings');
+          const settings = settingsJSON ? JSON.parse(settingsJSON) : {};
+          const theme = settings.theme || 'system';
+          if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {
+          // Fallback for safety
+          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+             document.documentElement.classList.add('dark');
+          }
+        }
+      })();
+    </script>
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="importmap">
 {
   "imports": {
     "react-dom/": "https://esm.sh/react-dom@18.2.0/",
     "react/": "https://esm.sh/react@18.2.0/",
     "react": "https://esm.sh/react@18.2.0",
-    "@google/genai": "https://esm.sh/@google/genai@^0.18.0"
+    "@google/genai": "https://cdn.jsdelivr.net/npm/@google/genai/dist/index.mjs"
   }
 }
 </script>
 </head>
-  <body class="bg-slate-50">
+  <body class="bg-slate-50 dark:bg-slate-900">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

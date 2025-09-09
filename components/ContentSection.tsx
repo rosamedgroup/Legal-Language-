@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Point, Section as SectionType } from '../data/content';
-import { slugify, highlightText, findRelatedSections } from '../utils';
+// FIX: Changed findRelatedSections to getRelatedSections to match the exported function from utils.
+import { slugify, highlightText, getRelatedSections } from '../utils';
 
 interface ContentSectionProps {
   title: string;
@@ -25,10 +26,20 @@ const ContentSection: React.FC<ContentSectionProps> = ({
   isBookmarked,
   onToggleBookmark
 }) => {
-  const relatedSections = useMemo(
-    () => findRelatedSections(title, allSections),
-    [title, allSections]
-  );
+  // FIX: Replaced useMemo with useState and useEffect to handle asynchronous data fetching from getRelatedSections.
+  const [relatedSections, setRelatedSections] = useState<string[]>([]);
+
+  useEffect(() => {
+    const currentSection: SectionType = { title, points, paragraphs };
+    getRelatedSections(currentSection, allSections)
+      .then(titles => {
+        setRelatedSections(titles);
+      })
+      .catch(error => {
+        console.error("Failed to fetch related sections:", error);
+        setRelatedSections([]);
+      });
+  }, [title, points, paragraphs, allSections]);
 
   return (
     <section id={slugify(title)} className="scroll-mt-24">

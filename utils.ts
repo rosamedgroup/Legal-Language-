@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Section } from './data/content';
+// DEFERRED: import { GoogleGenAI, Type } from "@google/genai";
 
 /**
  * Converts a string into a URL-friendly slug.
@@ -80,73 +81,110 @@ export const highlightText = (text: string, highlight: string): React.ReactNode 
     });
 };
 
-// A basic list of Arabic stop words to ignore during keyword extraction.
-const ARABIC_STOP_WORDS = new Set([
-  'في', 'من', 'على', 'إلى', 'عن', 'هو', 'هي', 'هم', 'هن', 'هذا', 'هذه', 'ذلك',
-  'أن', 'إن', 'كان', 'قد', 'لا', 'ما', 'أو', 'و', 'ثم', 'حتى', 'لكن', 'إذ', 'إذا',
-  'يا', 'أيها', 'الذي', 'التي', 'الذين', 'مع', 'به', 'له', 'منه', 'فيه', 'تم', 'تمت',
-  'كل', 'بعض', 'غير', 'سوى', 'عند', 'مثل', 'أي', 'حيث', 'كيف', 'متى', 'يكون',
-  'تكون', 'نكون', 'يكونون', 'كانت', 'كنت', 'كنا', 'عليهم', 'إليهم', 'بما', 'كما',
-  'فإن', 'وقد', 'ولما', 'وهو', 'وهي', 'أما', 'إلا', 'أنه', 'إذ', 'ذلك', 'لأن',
-]);
+// FIX: Lazily initialize AND dynamically import the GoogleGenAI client
+// to prevent module-level code from crashing the app on load in a browser environment.
+let ai: any; // Use 'any' as type imports are disallowed per guidelines.
+const getAiClient = async () => {
+    if (!ai) {
+        // Dynamically import the module only when needed.
+        const { GoogleGenAI } = await import("@google/genai");
+        ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+    }
+    return ai;
+}
+
+
+// Cache for related sections to avoid re-fetching for the same section
+const relatedSectionsCache = new Map<string, Promise<string[]>>();
 
 /**
- * Extracts meaningful keywords from a given text.
- * @param text The input text.
- * @returns A Set of unique keywords.
+ * Finds related sections using the Gemini API based on semantic similarity.
+ * @param currentSection The section to find relations for.
+ * @param allSections An array of all available sections in the document.
+ * @returns A promise that resolves to an array of related section titles.
  */
-const getKeywords = (text: string): Set<string> => {
-  const words = text
-    .replace(/[.,;:'"()]/g, ' ')
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(word => word.length > 2 && !ARABIC_STOP_WORDS.has(word));
-  return new Set(words);
-};
+export const getRelatedSections = (currentSection: Section, allSections: Section[]): Promise<string[]> => {
+    const cacheKey = slugify(currentSection.title);
+    if (relatedSectionsCache.has(cacheKey)) {
+        return relatedSectionsCache.get(cacheKey)!;
+    }
 
-/**
- * Calculates the Jaccard similarity between two sets.
- * @param setA The first set of strings.
- * @param setB The second set of strings.
- * @returns A similarity score between 0 and 1.
- */
-const jaccardSimilarity = (setA: Set<string>, setB: Set<string>): number => {
-  const intersection = new Set([...setA].filter(x => setB.has(x)));
-  const union = new Set([...setA, ...setB]);
-  return union.size === 0 ? 0 : intersection.size / union.size;
-};
+    const promise = (async (): Promise<string[]> => {
+        try {
+            const { Type } = await import("@google/genai");
 
-/**
- * Finds related sections based on keyword similarity.
- * @param currentTitle The title of the section to find relations for.
- * @param allSections An array of all available sections.
- * @param count The number of related sections to return.
- * @returns An array of related section titles.
- */
-export const findRelatedSections = (currentTitle: string, allSections: Section[], count: number = 3): string[] => {
-  const sectionsWithKeywords = allSections.map(section => {
-    const pointsText = section.points ? section.points.map(p => p.text).join(' ') : '';
-    const paragraphsText = section.paragraphs ? section.paragraphs.join(' ') : '';
-    const content = `${section.title} ${pointsText} ${paragraphsText}`;
-    return {
-      title: section.title,
-      keywords: getKeywords(content),
-    };
-  });
+            const currentSectionContent = [
+                currentSection.title,
+                ...(currentSection.paragraphs || []),
+                ...(currentSection.points ? currentSection.points.map(p => p.text) : [])
+            ].join('\n');
 
-  const currentSectionKeywords = sectionsWithKeywords.find(s => s.title === currentTitle)?.keywords;
-  if (!currentSectionKeywords) {
-    return [];
-  }
+            const otherSectionTitles = allSections
+                .filter(s => s.title !== currentSection.title)
+                .map(s => s.title);
 
-  const scoredSections = sectionsWithKeywords
-    .filter(section => section.title !== currentTitle)
-    .map(section => ({
-      title: section.title,
-      score: jaccardSimilarity(currentSectionKeywords, section.keywords),
-    }))
-    .filter(section => section.score > 0.02) // Set a small threshold to avoid completely unrelated matches
-    .sort((a, b) => b.score - a.score);
+            if (otherSectionTitles.length === 0) {
+                return [];
+            }
+            
+            // Truncate content to avoid overly long prompts
+            const truncatedContent = currentSectionContent.length > 3000 ? currentSectionContent.substring(0, 3000) + '...' : currentSectionContent;
 
-  return scoredSections.slice(0, count).map(s => s.title);
+            const prompt = `
+                Based on the semantic meaning and legal context of the following section:
+                ---
+                Title: ${currentSection.title}
+                Content: ${truncatedContent}
+                ---
+                
+                From the list of available section titles below, please identify the top 3 most relevant sections.
+                
+                Available Titles:
+                ${otherSectionTitles.join('; ')}
+
+                Return your answer ONLY as a JSON object with a single key "related_titles" containing an array of strings. Each string must be an exact title from the "Available Titles" list.
+                Example: {"related_titles": ["Title 1", "Title 2", "Title 3"]}
+            `;
+
+            const genAI = await getAiClient();
+            const response = await genAI.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+                config: {
+                    systemInstruction: "You are an expert legal assistant. Your task is to find semantically related legal document sections. You must only return JSON.",
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            related_titles: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.STRING
+                                }
+                            }
+                        },
+                        required: ["related_titles"]
+                    },
+                }
+            });
+
+            const jsonString = response.text;
+            const result = JSON.parse(jsonString);
+            
+            if (result && Array.isArray(result.related_titles)) {
+                // Ensure returned titles actually exist in the list to prevent hallucinations
+                const validTitles = new Set(otherSectionTitles);
+                return result.related_titles.filter((title: unknown) => typeof title === 'string' && validTitles.has(title));
+            }
+
+            return [];
+        } catch (error) {
+            console.error('Error fetching related sections from Gemini API:', error);
+            relatedSectionsCache.delete(cacheKey); // Invalidate cache on error
+            return [];
+        }
+    })();
+
+    relatedSectionsCache.set(cacheKey, promise);
+    return promise;
 };
