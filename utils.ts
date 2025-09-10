@@ -97,8 +97,109 @@ const getAiClient = async () => {
 // Cache for related sections to avoid re-fetching for the same section
 const relatedSectionsCache = new Map<string, Promise<string[]>>();
 
+// Queue to manage API requests and avoid rate limiting
+let isProcessingQueue = false;
+const requestQueue: {
+    resolve: (value: string[] | PromiseLike<string[]>) => void;
+    reject: (reason?: any) => void;
+    currentSection: Section;
+    allSections: Section[];
+    cacheKey: string;
+}[] = [];
+
+async function processQueue() {
+    if (isProcessingQueue || requestQueue.length === 0) {
+        return;
+    }
+    isProcessingQueue = true;
+
+    const { resolve, reject, currentSection, allSections, cacheKey } = requestQueue.shift()!;
+
+    try {
+        const { Type } = await import("@google/genai");
+
+        const currentSectionContent = [
+            currentSection.title,
+            ...(currentSection.paragraphs || []),
+            ...(currentSection.points ? currentSection.points.map(p => p.text) : [])
+        ].join('\n');
+
+        const otherSectionTitles = allSections
+            .filter(s => s.title !== currentSection.title)
+            .map(s => s.title);
+
+        if (otherSectionTitles.length === 0) {
+            resolve([]);
+            isProcessingQueue = false;
+            processQueue(); // Process next item immediately
+            return;
+        }
+        
+        const truncatedContent = currentSectionContent.length > 3000 ? currentSectionContent.substring(0, 3000) + '...' : currentSectionContent;
+
+        const prompt = `
+            Based on the semantic meaning and legal context of the following section:
+            ---
+            Title: ${currentSection.title}
+            Content: ${truncatedContent}
+            ---
+            
+            From the list of available section titles below, please identify the top 3 most relevant sections.
+            
+            Available Titles:
+            ${otherSectionTitles.join('; ')}
+
+            Return your answer ONLY as a JSON object with a single key "related_titles" containing an array of strings. Each string must be an exact title from the "Available Titles" list.
+            Example: {"related_titles": ["Title 1", "Title 2", "Title 3"]}
+        `;
+
+        const genAI = await getAiClient();
+        const response = await genAI.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                systemInstruction: "You are an expert legal assistant. Your task is to find semantically related legal document sections. You must only return JSON.",
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        related_titles: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.STRING
+                            }
+                        },
+                        required: ["related_titles"]
+                    },
+                }
+            });
+
+        const jsonString = response.text;
+        const result = JSON.parse(jsonString);
+        
+        if (result && Array.isArray(result.related_titles)) {
+            const validTitles = new Set(otherSectionTitles);
+            const relatedTitles = result.related_titles.filter((title: unknown) => typeof title === 'string' && validTitles.has(title));
+            resolve(relatedTitles);
+        } else {
+            resolve([]);
+        }
+
+    } catch (error) {
+        console.error('Error fetching related sections from Gemini API:', error);
+        relatedSectionsCache.delete(cacheKey); // Invalidate cache on error
+        reject(error);
+    } finally {
+        // Add a delay to respect rate limits (e.g., 60 RPM) before processing the next request.
+        setTimeout(() => {
+            isProcessingQueue = false;
+            processQueue(); // Process next item
+        }, 1100); // ~55 requests per minute, safely below the limit.
+    }
+}
+
 /**
- * Finds related sections using the Gemini API based on semantic similarity.
+ * Finds related sections using the Gemini API based on semantic similarity, with queuing to prevent rate-limiting.
  * @param currentSection The section to find relations for.
  * @param allSections An array of all available sections in the document.
  * @returns A promise that resolves to an array of related section titles.
@@ -109,81 +210,12 @@ export const getRelatedSections = (currentSection: Section, allSections: Section
         return relatedSectionsCache.get(cacheKey)!;
     }
 
-    const promise = (async (): Promise<string[]> => {
-        try {
-            const { Type } = await import("@google/genai");
-
-            const currentSectionContent = [
-                currentSection.title,
-                ...(currentSection.paragraphs || []),
-                ...(currentSection.points ? currentSection.points.map(p => p.text) : [])
-            ].join('\n');
-
-            const otherSectionTitles = allSections
-                .filter(s => s.title !== currentSection.title)
-                .map(s => s.title);
-
-            if (otherSectionTitles.length === 0) {
-                return [];
-            }
-            
-            // Truncate content to avoid overly long prompts
-            const truncatedContent = currentSectionContent.length > 3000 ? currentSectionContent.substring(0, 3000) + '...' : currentSectionContent;
-
-            const prompt = `
-                Based on the semantic meaning and legal context of the following section:
-                ---
-                Title: ${currentSection.title}
-                Content: ${truncatedContent}
-                ---
-                
-                From the list of available section titles below, please identify the top 3 most relevant sections.
-                
-                Available Titles:
-                ${otherSectionTitles.join('; ')}
-
-                Return your answer ONLY as a JSON object with a single key "related_titles" containing an array of strings. Each string must be an exact title from the "Available Titles" list.
-                Example: {"related_titles": ["Title 1", "Title 2", "Title 3"]}
-            `;
-
-            const genAI = await getAiClient();
-            const response = await genAI.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: prompt,
-                config: {
-                    systemInstruction: "You are an expert legal assistant. Your task is to find semantically related legal document sections. You must only return JSON.",
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            related_titles: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.STRING
-                                }
-                            }
-                        },
-                        required: ["related_titles"]
-                    },
-                }
-            });
-
-            const jsonString = response.text;
-            const result = JSON.parse(jsonString);
-            
-            if (result && Array.isArray(result.related_titles)) {
-                // Ensure returned titles actually exist in the list to prevent hallucinations
-                const validTitles = new Set(otherSectionTitles);
-                return result.related_titles.filter((title: unknown) => typeof title === 'string' && validTitles.has(title));
-            }
-
-            return [];
-        } catch (error) {
-            console.error('Error fetching related sections from Gemini API:', error);
-            relatedSectionsCache.delete(cacheKey); // Invalidate cache on error
-            return [];
+    const promise = new Promise<string[]>((resolve, reject) => {
+        requestQueue.push({ resolve, reject, currentSection, allSections, cacheKey });
+        if (!isProcessingQueue) {
+            processQueue();
         }
-    })();
+    });
 
     relatedSectionsCache.set(cacheKey, promise);
     return promise;

@@ -16,11 +16,14 @@ import * as caseStudyContent from './data/caseStudyContent';
 import * as statementOfClaimContent from './data/newCaseContent';
 import * as judicialVerdictContent from './data/judicialVerdictContent';
 import * as newClassificationContent from './data/newClassificationContent';
+import * as moralDamagesContent from './data/moralDamagesContent';
+import * as criminalJusticeQaContent from './data/criminalJusticeQaContent';
+import * as generalJudiciaryQaContent from './data/generalJudiciaryQaContent';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
-type Theme = 'light' | 'dark' | 'system';
-export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict' | 'newClassification';
+export type Theme = 'light' | 'dark' | 'system';
+export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict' | 'newClassification' | 'moralDamages' | 'criminalJusticeQA' | 'generalJudiciaryQA';
 // FIX: Changed Bookmarks to be a partial record to allow initialization with an empty object and fix type errors.
 export type Bookmarks = Partial<Record<DocumentType, string[]>>;
 
@@ -71,6 +74,24 @@ const documents = {
     buttonLabel: 'تصنيف الدعاوى',
     author: 'تنسيق: المحامي/ عبد الجميلي | تصنيف: البحوث القانونية عبد الوهاب عبد الحي بن فضل',
     content: newClassificationContent,
+  },
+  moralDamages: {
+    title: 'التعويض عن الضرر المعنوي',
+    buttonLabel: 'الضرر المعنوي',
+    author: 'د. عبد الملك بن عبد المحسن العسكر',
+    content: moralDamagesContent,
+  },
+  criminalJusticeQA: {
+    title: '55 سؤالاً في القضاء الجزائي',
+    buttonLabel: 'أسئلة القضاء الجزائي',
+    author: 'وزارة العدل',
+    content: criminalJusticeQaContent,
+  },
+  generalJudiciaryQA: {
+    title: '60 سؤالاً في القضاء العام',
+    buttonLabel: 'أسئلة القضاء العام',
+    author: 'وزارة العدل',
+    content: generalJudiciaryQaContent,
   },
 };
 
@@ -212,6 +233,12 @@ const App: React.FC = () => {
     setFontSize(defaultSettings.fontSize);
     setLineHeight(defaultSettings.lineHeight);
     setTheme(defaultSettings.theme);
+  };
+
+  const handleThemeToggle = () => {
+    const isCurrentlyDark = theme === 'dark' || 
+                           (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    setTheme(isCurrentlyDark ? 'light' : 'dark');
   };
 
   const handlePrintToPdf = async () => {
@@ -421,6 +448,8 @@ const App: React.FC = () => {
         activeDocument={activeDocument}
         onDocumentChange={handleDocumentChange}
         documents={documents}
+        theme={theme}
+        onToggleTheme={handleThemeToggle}
       />
       
       <SettingsPanel
