@@ -144,13 +144,10 @@ async function processQueue() {
             Content: ${truncatedContent}
             ---
             
-            From the list of available section titles below, please identify the top 3 most relevant sections.
+            From the list of available section titles below, please identify up to 3 of the most relevant sections.
             
             Available Titles:
             ${otherSectionTitles.join('; ')}
-
-            Return your answer ONLY as a JSON object with a single key "related_titles" containing an array of strings. Each string must be an exact title from the "Available Titles" list.
-            Example: {"related_titles": ["Title 1", "Title 2", "Title 3"]}
         `;
 
         const genAI = await getAiClient();
@@ -165,12 +162,14 @@ async function processQueue() {
                     properties: {
                         related_titles: {
                             type: Type.ARRAY,
+                            description: "A list of up to 3 titles of sections that are semantically related to the input section.",
                             items: {
-                                type: Type.STRING
+                                type: Type.STRING,
+                                description: "The exact title of a related section from the provided list."
                             }
-                        },
-                        required: ["related_titles"]
+                        }
                     },
+                    required: ["related_titles"]
                 }
             });
 

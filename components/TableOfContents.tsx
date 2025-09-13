@@ -38,6 +38,22 @@ const ChevronIcon: React.FC<{ isOpen: boolean }> = ({ isOpen }) => (
   </svg>
 );
 
+// Smooth scroll handler for TOC links
+const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
+    e.preventDefault();
+    const element = document.getElementById(slug);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+      // Update the URL hash without adding to browser history for better UX
+      if (history.replaceState) {
+        history.replaceState(null, '', `#${slug}`);
+      }
+    }
+};
+
 // A single TOC item component to reduce repetition
 const TocItem: React.FC<{
   section: Section;
@@ -64,6 +80,7 @@ const TocItem: React.FC<{
     >
       <a
         href={`#${sectionSlug}`}
+        onClick={(e) => handleLinkClick(e, sectionSlug)}
         tabIndex={-1} // Items are navigated via arrow keys, not tab
         className={`flex-1 text-sm duration-200 py-1 px-1 rounded-l-md ${
             isActive
@@ -97,6 +114,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
   
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<number, HTMLLIElement | null>>(new Map());
+  const navRef = useRef<HTMLElement>(null);
 
   const bookmarkedSlugs = useMemo(() => new Set(bookmarkedSections.map(s => slugify(s.title))), [bookmarkedSections]);
   
@@ -171,14 +189,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                 e.preventDefault();
                 const element = itemRefs.current.get(focusedIndex);
                 const link = element?.querySelector('a');
-                if (link) {
-                  link.click();
-                   // Manually update URL hash since click simulation might not
-                  const href = link.getAttribute('href');
-                  if (href) {
-                     window.location.hash = href;
-                  }
-                }
+                link?.click();
             }
         }
     };
@@ -199,6 +210,29 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
       setFocusedIndex(-1);
       itemRefs.current.clear(); // Clear refs when list re-renders to get a fresh count.
   }, [jumpQuery, isBookmarksOpen, expandedGroups, sections]);
+
+  // Scroll active item into view when user scrolls the main content
+  useEffect(() => {
+    const scrollContainer = navRef.current;
+    if (!scrollContainer) return;
+
+    const activeLink = scrollContainer.querySelector(`a[href="#${activeSection}"]`);
+    if (!activeLink) return;
+
+    const activeListItem = activeLink.closest('li');
+    if (!activeListItem) return;
+
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const itemRect = activeListItem.getBoundingClientRect();
+    
+    // Only scroll if the item is not fully visible within the container
+    if (itemRect.top < containerRect.top || itemRect.bottom > containerRect.bottom) {
+      activeListItem.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [activeSection]);
 
   let itemCounter = 0;
   
@@ -277,7 +311,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
           </div>
         </div>
         
-        <nav aria-label="Table of contents" className="flex-1 overflow-y-auto pr-1 -mr-2">
+        <nav ref={navRef} aria-label="Table of contents" className="flex-1 overflow-y-auto pr-1 -mr-2">
             {groupedSections ? (
                 <ul className="space-y-1">
                     {Object.entries(groupedSections).map(([groupTitle, groupSections]) => {
