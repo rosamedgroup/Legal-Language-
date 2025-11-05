@@ -48,7 +48,8 @@ const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) =
         block: 'start',
       });
       // Update the URL hash without adding to browser history for better UX
-      if (history.replaceState) {
+      // Prevent replaceState on blob URLs which causes a SecurityError in sandboxed environments
+      if (history.replaceState && window.location.protocol !== 'blob:') {
         history.replaceState(null, '', `#${slug}`);
       }
     }
@@ -367,23 +368,29 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                     })}
                 </ul>
             ) : (
-                <ol role="listbox" className="space-y-2">
-                    {filteredTocSections.map(section => {
-                        const currentIndex = itemCounter++;
-                        return (
-                           <TocItem 
-                                key={section.title}
-                                section={section}
-                                activeSection={activeSection}
-                                isBookmarked={bookmarkedSlugs.has(slugify(section.title))}
-                                onToggleBookmark={onToggleBookmark}
-                                isFocused={currentIndex === focusedIndex}
-                                itemRef={el => itemRefs.current.set(currentIndex, el)}
-                                id={`toc-item-${currentIndex}`}
-                            />
-                        );
-                    })}
-                </ol>
+                filteredTocSections.length > 0 ? (
+                    <ol role="listbox" className="space-y-2">
+                        {filteredTocSections.map(section => {
+                            const currentIndex = itemCounter++;
+                            return (
+                               <TocItem 
+                                    key={section.title}
+                                    section={section}
+                                    activeSection={activeSection}
+                                    isBookmarked={bookmarkedSlugs.has(slugify(section.title))}
+                                    onToggleBookmark={onToggleBookmark}
+                                    isFocused={currentIndex === focusedIndex}
+                                    itemRef={el => itemRefs.current.set(currentIndex, el)}
+                                    id={`toc-item-${currentIndex}`}
+                                />
+                            );
+                        })}
+                    </ol>
+                ) : (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4 px-2">
+                        لا توجد أقسام مطابقة.
+                    </p>
+                )
             )}
         </nav>
       </div>

@@ -27,7 +27,8 @@ const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) =
         block: 'start',
       });
       // Update the URL hash without adding to browser history for better UX
-      if (history.replaceState) {
+      // Prevent replaceState on blob URLs which causes a SecurityError in sandboxed environments
+      if (history.replaceState && window.location.protocol !== 'blob:') {
         history.replaceState(null, '', `#${slug}`);
       }
     }
