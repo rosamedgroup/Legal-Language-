@@ -109,7 +109,8 @@ const RelatedSections: React.FC<RelatedSectionsProps> = ({ currentSection, allSe
                   <span>{relatedTitle}</span>
                 </a>
               </li>
-            )})}
+            );
+            })}
           </ul>
         </>
       ) : null}

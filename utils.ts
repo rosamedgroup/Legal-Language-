@@ -171,7 +171,8 @@ async function processQueue() {
                     },
                     required: ["related_titles"]
                 }
-            });
+            }
+        });
 
         const jsonString = response.text;
         const result = JSON.parse(jsonString);

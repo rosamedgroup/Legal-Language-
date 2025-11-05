@@ -9,6 +9,7 @@ import BackToTopButton from './components/BackToTopButton';
 import RelatedSections from './components/RelatedSections';
 import { Section } from './data/content';
 import { highlightText, slugify } from './utils';
+import { notoKufiArabicFont } from './data/notoKufiArabicFont';
 
 // Static Imports for all documents to ensure stability
 import * as enhancementsContent from './data/content';
@@ -64,7 +65,7 @@ const documents = {
     content: statementOfClaimContent,
   },
   judicialVerdict: {
-    title: 'شکاوی ودعاوى كيدية',
+    title: 'شكاوى ودعاوى كيدية',
     buttonLabel: 'دعاوى كيدية',
     author: 'مجموعة الأحكام القضائية لعام ١٤٣٥هـ',
     content: judicialVerdictContent,
@@ -253,12 +254,32 @@ const App: React.FC = () => {
 
     setIsPrinting(true);
 
+    const style = document.createElement('style');
+    style.id = 'print-font-style';
+    // Using Amiri font from notoKufiArabicFont.ts to ensure it's loaded and doesn't corrupt canvas
+    style.innerHTML = `
+      @font-face {
+        font-family: 'Amiri';
+        src: url(data:application/font-ttf;charset=utf-8;base64,${notoKufiArabicFont}) format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      .printing-content * {
+        font-family: 'Amiri', sans-serif !important;
+      }
+    `;
+    document.head.appendChild(style);
+    (contentToPrint as HTMLElement).classList.add('printing-content');
+
     const backToTopButton = document.querySelector('.fixed.bottom-6.right-6') as HTMLElement;
     if (backToTopButton) backToTopButton.style.display = 'none';
 
+    // Brief delay to ensure font is applied before canvas capture
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     try {
         const canvas = await html2canvas(contentToPrint as HTMLElement, {
-            scale: 2,
+            scale: 2, // Keep higher scale for better quality
             useCORS: true,
             backgroundColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
         });
@@ -272,20 +293,25 @@ const App: React.FC = () => {
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         
-        const ratio = canvasWidth / pdfWidth;
-        const canvasHeightInPdf = canvasHeight / ratio;
+        const margin = 15;
+        const effectiveWidth = pdfWidth - (margin * 2);
+        const ratio = canvasWidth / effectiveWidth;
+        const effectiveHeight = canvasHeight / ratio;
         
-        let heightLeft = canvasHeightInPdf;
+        let heightLeft = effectiveHeight;
         let position = 0;
+        const pageUsableHeight = pdfHeight - (margin * 2);
         
-        pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, canvasHeightInPdf);
-        heightLeft -= pdfHeight;
+        // Add the first page
+        pdf.addImage(imgData, 'PNG', margin, position + margin, effectiveWidth, effectiveHeight);
+        heightLeft -= pageUsableHeight;
         
+        // Add subsequent pages
         while (heightLeft > 0) {
-            position = -heightLeft - 10;
+            position -= pageUsableHeight;
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, canvasHeightInPdf);
-            heightLeft -= pdfHeight;
+            pdf.addImage(imgData, 'PNG', margin, position + margin, effectiveWidth, effectiveHeight);
+            heightLeft -= pageUsableHeight;
         }
 
         const filename = `${documents[activeDocument].title}.pdf`;
@@ -296,6 +322,12 @@ const App: React.FC = () => {
         alert("Sorry, there was an error creating the PDF. Please try again.");
     } finally {
         if (backToTopButton) backToTopButton.style.display = '';
+        // Cleanup
+        (contentToPrint as HTMLElement).classList.remove('printing-content');
+        const styleElement = document.getElementById('print-font-style');
+        if (styleElement) {
+            styleElement.remove();
+        }
         setIsPrinting(false);
     }
   };

@@ -314,7 +314,9 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
         <nav ref={navRef} aria-label="Table of contents" className="flex-1 overflow-y-auto pr-1 -mr-2">
             {groupedSections ? (
                 <ul className="space-y-1">
-                    {Object.entries(groupedSections).map(([groupTitle, groupSections]) => {
+                    {Object.entries(groupedSections).map(([groupTitle, groupSectionsValue]) => {
+                        // FIX: Add type assertion to resolve incorrect type inference for groupSectionsValue.
+                        const groupSections = groupSectionsValue as Section[];
                         const isExpanded = expandedGroups[groupTitle] ?? false;
                         const isCollapsible = !(groupSections.length === 1 && groupSections[0].title === groupTitle);
                         
