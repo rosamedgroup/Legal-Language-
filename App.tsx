@@ -10,6 +10,7 @@ import RelatedSections from './components/RelatedSections';
 import { Section } from './data/content';
 import { highlightText, slugify } from './utils';
 import { notoKufiArabicFont } from './data/notoKufiArabicFont';
+import Chatbot from './components/Chatbot';
 
 // Static Imports for all documents to ensure stability
 import * as enhancementsContent from './data/content';
@@ -20,11 +21,15 @@ import * as newClassificationContent from './data/newClassificationContent';
 import * as moralDamagesContent from './data/moralDamagesContent';
 import * as criminalJusticeQaContent from './data/criminalJusticeQaContent';
 import * as generalJudiciaryQaContent from './data/generalJudiciaryQaContent';
+import * as historicalCasesContent from './data/historicalCasesContent';
+import * as legalAnalysisContent from './data/legalAnalysisContent';
+import * as courtDecisionsContent from './data/courtDecisionsContent';
+import * as arbitrationAwardsContent from './data/arbitrationAwardsContent';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
 export type Theme = 'light' | 'dark' | 'system';
-export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict' | 'newClassification' | 'moralDamages' | 'criminalJusticeQA' | 'generalJudiciaryQA';
+export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict' | 'newClassification' | 'moralDamages' | 'criminalJusticeQA' | 'generalJudiciaryQA' | 'historicalCases' | 'legalAnalysis' | 'courtDecisions' | 'arbitrationAwards';
 // FIX: Changed Bookmarks to be a partial record to allow initialization with an empty object and fix type errors.
 export type Bookmarks = Partial<Record<DocumentType, string[]>>;
 
@@ -93,6 +98,30 @@ const documents = {
     buttonLabel: 'أسئلة القضاء العام',
     author: 'وزارة العدل',
     content: generalJudiciaryQaContent,
+  },
+  historicalCases: {
+    title: 'قضايا تاريخية',
+    buttonLabel: 'قضايا تاريخية',
+    author: 'مجموعة مختارة',
+    content: historicalCasesContent,
+  },
+  legalAnalysis: {
+    title: 'تحليلات قانونية',
+    buttonLabel: 'تحليلات قانونية',
+    author: 'خبراء قانونيون',
+    content: legalAnalysisContent,
+  },
+  courtDecisions: {
+    title: 'قرارات محاكم',
+    buttonLabel: 'قرارات محاكم',
+    author: 'مجموعة مختارة من المحاكم',
+    content: courtDecisionsContent,
+  },
+  arbitrationAwards: {
+    title: 'أحكام تحكيم',
+    buttonLabel: 'أحكام تحكيم',
+    author: 'هيئات تحكيم مختارة',
+    content: arbitrationAwardsContent,
   },
 };
 
@@ -538,6 +567,7 @@ const App: React.FC = () => {
                   bookmarkedSections={bookmarkedSections}
                   onToggleBookmark={(slug) => toggleBookmark(activeDocument, slug)}
                   activeSection={activeSection}
+                  setActiveSection={setActiveSection}
                 />
               </aside>
 
@@ -660,6 +690,7 @@ const App: React.FC = () => {
       </main>
 
       <Footer />
+      <Chatbot />
       <BackToTopButton />
     </div>
   );

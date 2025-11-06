@@ -7,6 +7,7 @@ interface TableOfContentsProps {
   bookmarkedSections: Section[];
   onToggleBookmark: (slug: string) => void;
   activeSection: string;
+  setActiveSection: (slug: string) => void;
 }
 
 const BookmarkFilledIcon: React.FC = () => (
@@ -38,23 +39,6 @@ const ChevronIcon: React.FC<{ isOpen: boolean }> = ({ isOpen }) => (
   </svg>
 );
 
-// Smooth scroll handler for TOC links
-const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
-    e.preventDefault();
-    const element = document.getElementById(slug);
-    if (element) {
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-      // Update the URL hash without adding to browser history for better UX
-      // Prevent replaceState on blob URLs which causes a SecurityError in sandboxed environments
-      if (history.replaceState && window.location.protocol !== 'blob:') {
-        history.replaceState(null, '', `#${slug}`);
-      }
-    }
-};
-
 // A single TOC item component to reduce repetition
 const TocItem: React.FC<{
   section: Section;
@@ -65,7 +49,8 @@ const TocItem: React.FC<{
   isFocused: boolean;
   itemRef: (el: HTMLLIElement | null) => void;
   id: string;
-}> = ({ section, activeSection, isBookmarked, onToggleBookmark, displayText, isFocused, itemRef, id }) => {
+  onLinkClick: (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => void;
+}> = ({ section, activeSection, isBookmarked, onToggleBookmark, displayText, isFocused, itemRef, id, onLinkClick }) => {
   const sectionSlug = slugify(section.title);
   const isActive = activeSection === sectionSlug;
   
@@ -81,7 +66,7 @@ const TocItem: React.FC<{
     >
       <a
         href={`#${sectionSlug}`}
-        onClick={(e) => handleLinkClick(e, sectionSlug)}
+        onClick={(e) => onLinkClick(e, sectionSlug)}
         tabIndex={-1} // Items are navigated via arrow keys, not tab
         className={`flex-1 text-sm duration-200 py-1 px-1 rounded-l-md ${
             isActive
@@ -108,7 +93,7 @@ const TocItem: React.FC<{
 };
 
 
-const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedSections, onToggleBookmark, activeSection }) => {
+const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedSections, onToggleBookmark, activeSection, setActiveSection }) => {
   const [jumpQuery, setJumpQuery] = useState('');
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(true);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -159,6 +144,24 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
     }));
   };
   
+  // Smooth scroll handler for TOC links
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
+      e.preventDefault();
+      setActiveSection(slug); // Instantly highlight the clicked item
+      const element = document.getElementById(slug);
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+        // Update the URL hash without adding to browser history for better UX
+        // Prevent replaceState on blob URLs which causes a SecurityError in sandboxed environments
+        if (history.replaceState && window.location.protocol !== 'blob:') {
+          history.replaceState(null, '', `#${slug}`);
+        }
+      }
+  };
+
   // This effect handles the keyboard navigation logic.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -281,6 +284,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                               isFocused={currentIndex === focusedIndex}
                               itemRef={el => itemRefs.current.set(currentIndex, el)}
                               id={`toc-item-${currentIndex}`}
+                              onLinkClick={handleLinkClick}
                           />
                       );
                   })}
@@ -332,6 +336,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                 isFocused={currentIndex === focusedIndex}
                                 itemRef={el => itemRefs.current.set(currentIndex, el)}
                                 id={`toc-item-${currentIndex}`}
+                                onLinkClick={handleLinkClick}
                             />;
                         }
 
@@ -357,6 +362,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                                     isFocused={currentIndex === focusedIndex}
                                                     itemRef={el => itemRefs.current.set(currentIndex, el)}
                                                     id={`toc-item-${currentIndex}`}
+                                                    onLinkClick={handleLinkClick}
                                                 />
                                             );
                                         })}
@@ -382,6 +388,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                     isFocused={currentIndex === focusedIndex}
                                     itemRef={el => itemRefs.current.set(currentIndex, el)}
                                     id={`toc-item-${currentIndex}`}
+                                    onLinkClick={handleLinkClick}
                                 />
                             );
                         })}
