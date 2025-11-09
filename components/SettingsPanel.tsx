@@ -26,10 +26,10 @@ const SegmentedControlButton: React.FC<{
     role="radio"
     aria-checked={isActive}
     onClick={onClick}
-    className={`px-3 py-2 text-sm rounded-md transition-all duration-200 flex-1 flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800 ${
+    className={`px-3 py-2 text-sm rounded-md transition-all duration-200 flex-1 flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-800 ${
       isActive
-        ? 'bg-white text-blue-700 dark:bg-slate-600 dark:text-white font-semibold shadow-sm'
-        : 'bg-transparent hover:bg-slate-200/70 dark:hover:bg-slate-700/60 text-slate-600 dark:text-slate-300'
+        ? 'bg-white text-sky-700 dark:bg-zinc-600 dark:text-white font-semibold shadow-sm'
+        : 'bg-transparent hover:bg-zinc-200/70 dark:hover:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300'
     }`}
   >
     {children}
@@ -101,19 +101,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         aria-hidden="true"
       ></div>
       <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-white dark:bg-slate-800 rounded-xl shadow-lg z-50 p-6"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-white dark:bg-zinc-800 rounded-xl shadow-lg z-50 p-6"
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
       >
-        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 id="settings-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-200 dark:border-zinc-700">
+          <h2 id="settings-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
             إعدادات العرض
           </h2>
           <button
             onClick={onClose}
             aria-label="Close settings"
-            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
+            className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
               <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
@@ -124,10 +124,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <div className="space-y-6">
             {/* Theme Control */}
             <div>
-              <label id="theme-label" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label id="theme-label" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 المظهر
               </label>
-              <div role="radiogroup" aria-labelledby="theme-label" className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+              <div role="radiogroup" aria-labelledby="theme-label" className="flex items-center space-x-2 bg-zinc-100 dark:bg-zinc-700 p-1 rounded-lg">
                 {themes.map(({ value, label }) => (
                   <SegmentedControlButton
                     key={value}
@@ -143,10 +143,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             
           {/* Font Size Control */}
           <div>
-            <label id="font-size-label" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label id="font-size-label" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
               حجم الخط
             </label>
-            <div role="radiogroup" aria-labelledby="font-size-label" className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+            <div role="radiogroup" aria-labelledby="font-size-label" className="flex items-center space-x-2 bg-zinc-100 dark:bg-zinc-700 p-1 rounded-lg">
               {fontSizes.map(({ value, label }) => (
                 <SegmentedControlButton
                   key={value}
@@ -161,10 +161,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {/* Line Spacing Control */}
           <div>
-            <label id="line-height-label" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label id="line-height-label" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
               تباعد الأسطر
             </label>
-            <div role="radiogroup" aria-labelledby="line-height-label" className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+            <div role="radiogroup" aria-labelledby="line-height-label" className="flex items-center space-x-2 bg-zinc-100 dark:bg-zinc-700 p-1 rounded-lg">
               {lineHeights.map(({ value, label }) => (
                 <SegmentedControlButton
                   key={value}
@@ -179,10 +179,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
 
         {/* Reset Button */}
-        <div className="text-right mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+        <div className="text-right mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-700">
           <button
             onClick={onResetSettings}
-            className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 rounded-sm"
+            className="text-sm font-medium text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300 hover:underline transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-800 rounded-sm"
           >
             إعادة تعيين الإعدادات
           </button>

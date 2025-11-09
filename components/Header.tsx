@@ -22,7 +22,7 @@ const ActionButton: React.FC<{ onClick: () => void; ariaLabel: string; children:
         onClick={onClick}
         aria-label={ariaLabel}
         disabled={disabled}
-        className="p-2 rounded-full hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="p-2 rounded-full hover:bg-zinc-200/70 dark:hover:bg-zinc-700/70 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
     >
         {children}
     </button>
@@ -124,14 +124,14 @@ const Header: React.FC<HeaderProps> = ({
   }
 
   return (
-    <header className="py-3 bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/80 dark:border-slate-700/80 sticky top-0 z-30 backdrop-blur-sm">
+    <header className="py-3 bg-zinc-50/90 dark:bg-zinc-900/90 border-b border-zinc-200/80 dark:border-zinc-800/80 sticky top-0 z-30 backdrop-blur-sm">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-3">
             {/* Left Side */}
             <div className="flex items-center gap-2">
                 <button 
                     onClick={onToggleToc}
-                    className="p-2 -ml-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 lg:hidden"
+                    className="p-2 -ml-2 rounded-full text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 lg:hidden"
                     aria-label="Open navigation menu"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -143,8 +143,8 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Center: Title (hidden on small screens) */}
             <div className="flex-1 min-w-0 text-center hidden md:block">
-                <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">{currentDoc.title}</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{currentDoc.author}</p>
+                <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate">{currentDoc.title}</h1>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{currentDoc.author}</p>
             </div>
             
             {/* Right Side Actions */}
@@ -157,11 +157,11 @@ const Header: React.FC<HeaderProps> = ({
                             placeholder="ابحث..."
                             value={searchQuery}
                             onChange={(e) => onSearchChange(e.target.value)}
-                            className="w-full pl-4 pr-10 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+                            className="w-full pl-4 pr-10 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-md text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 text-sm"
                             aria-label="Search content"
                         />
                         <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" fill="currentColor" viewBox="0 0 16 16">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                             </svg>
                         </div>
@@ -206,20 +206,20 @@ const Header: React.FC<HeaderProps> = ({
                         aria-label="Switch document"
                         aria-haspopup="true"
                         aria-expanded={isNavOpen}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-md transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-md transition-colors"
                     >
                         <span>{currentDoc.buttonLabel}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isNavOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-transform duration-200 ${isNavOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
                     </button>
 
                     <div 
                         id="document-navigation-menu"
-                        className={`absolute top-full right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-40 transition-all duration-200 ease-out origin-top-right ${isNavOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+                        className={`absolute top-full right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 py-2 z-40 transition-all duration-200 ease-out origin-top-right ${isNavOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
                         role="menu"
                     >
-                        <div className="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                        <div className="px-3 py-2 text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                           اختر وثيقة
                         </div>
                         <ul role="none">
@@ -229,17 +229,17 @@ const Header: React.FC<HeaderProps> = ({
                                 onClick={() => handleDocChange(docKey)}
                                 className={`w-full text-right px-4 py-2.5 text-sm transition-colors duration-200 flex justify-between items-center ${
                                   activeDocument === docKey
-                                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-semibold'
-                                    : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+                                    ? 'bg-sky-50 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300 font-semibold'
+                                    : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700'
                                 }`}
                                 role="menuitem"
                               >
                                 <div className="flex flex-col text-right">
                                   <span className="font-medium">{documents[docKey].title}</span>
-                                  <span className={`text-xs ${activeDocument === docKey ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>{documents[docKey].buttonLabel}</span>
+                                  <span className={`text-xs ${activeDocument === docKey ? 'text-sky-600 dark:text-sky-400' : 'text-zinc-500 dark:text-zinc-400'}`}>{documents[docKey].buttonLabel}</span>
                                 </div>
                                 {activeDocument === docKey && (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-sky-600 dark:text-sky-400" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
                                 )}

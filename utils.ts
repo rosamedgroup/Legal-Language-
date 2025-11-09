@@ -100,7 +100,7 @@ const relatedSectionsCache = new Map<string, Promise<string[]>>();
 // Queue to manage API requests and avoid rate limiting
 let isProcessingQueue = false;
 const MAX_RETRIES = 5;
-const INITIAL_DELAY_MS = 5000; // Increased delay for safety, ~12 RPM.
+const INITIAL_DELAY_MS = 15000; // Increased delay to 15s to avoid rate-limiting (~4 RPM).
 
 const requestQueue: {
     resolve: (value: string[] | PromiseLike<string[]>) => void;

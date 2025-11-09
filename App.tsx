@@ -10,7 +10,6 @@ import RelatedSections from './components/RelatedSections';
 import { Section } from './data/content';
 import { highlightText, slugify } from './utils';
 import { notoKufiArabicFont } from './data/notoKufiArabicFont';
-import Chatbot from './components/Chatbot';
 import Placeholder from './components/Placeholder';
 
 // Static Imports for all documents to ensure stability
@@ -301,7 +300,7 @@ const App: React.FC = () => {
     document.head.appendChild(style);
     (contentToPrint as HTMLElement).classList.add('printing-content');
 
-    const backToTopButton = document.querySelector('.fixed.bottom-6.right-6') as HTMLElement;
+    const backToTopButton = document.querySelector('.back-to-top-button') as HTMLElement;
     if (backToTopButton) backToTopButton.style.display = 'none';
 
     // Brief delay to ensure font is applied before canvas capture
@@ -311,7 +310,7 @@ const App: React.FC = () => {
         const canvas = await html2canvas(contentToPrint as HTMLElement, {
             scale: 2, // Keep higher scale for better quality
             useCORS: true,
-            backgroundColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+            backgroundColor: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff', // zinc-900
         });
         
         const imgData = canvas.toDataURL('image/png');
@@ -498,7 +497,7 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-300 flex flex-col">
+    <div className="min-h-screen bg-zinc-50 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 flex flex-col">
       <Header 
         onToggleSettings={() => setShowSettings(!showSettings)} 
         onToggleToc={() => setIsTocOpen(!isTocOpen)}
@@ -547,19 +546,19 @@ const App: React.FC = () => {
 
               {/* TOC Sidebar / Off-canvas */}
               <aside className={`
-                fixed top-0 right-0 h-full w-72 bg-slate-50 dark:bg-slate-800 shadow-xl z-50 p-4 transition-transform duration-300 ease-in-out 
+                fixed top-0 right-0 h-full w-72 bg-zinc-50 dark:bg-zinc-800 shadow-lg z-50 p-4 transition-transform duration-300 ease-in-out 
                 lg:sticky lg:top-24 lg:w-64 lg:p-0 lg:pr-4 lg:bg-transparent dark:lg:bg-transparent lg:shadow-none lg:max-h-[calc(100vh-6rem)]
                 ${isTocOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0
               `}>
                 {/* Mobile panel header */}
                 <div className="flex justify-between items-center mb-4 lg:hidden">
-                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">القائمة</h2>
+                    <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">القائمة</h2>
                     <button 
                         onClick={() => setIsTocOpen(false)} 
-                        className="p-2 -mr-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
+                        className="p-2 -mr-2 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60"
                         aria-label="Close menu"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-600 dark:text-slate-300" fill="currentColor" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-zinc-600 dark:text-zinc-300" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                         </svg>
                     </button>
@@ -569,7 +568,7 @@ const App: React.FC = () => {
                 <div className="lg:hidden h-[calc(100%-4rem)] overflow-y-auto">
                     <div className="space-y-8">
                         <div>
-                            <h3 className="px-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">اختر وثيقة</h3>
+                            <h3 className="px-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">اختر وثيقة</h3>
                             <ul className="space-y-1">
                                 {(Object.keys(documents) as DocumentType[]).map((docKey) => (
                                 <li key={docKey}>
@@ -580,16 +579,16 @@ const App: React.FC = () => {
                                         }}
                                         className={`w-full text-right px-3 py-2 text-sm transition-colors duration-200 flex justify-between items-center rounded-md ${
                                             activeDocument === docKey
-                                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-semibold'
-                                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+                                            ? 'bg-sky-50 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300 font-semibold'
+                                            : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700'
                                         }`}
                                     >
                                         <div className="flex flex-col text-right">
                                             <span className="font-medium">{documents[docKey].title}</span>
-                                            <span className={`text-xs ${activeDocument === docKey ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>{documents[docKey].buttonLabel}</span>
+                                            <span className={`text-xs ${activeDocument === docKey ? 'text-sky-600 dark:text-sky-400' : 'text-zinc-500 dark:text-zinc-400'}`}>{documents[docKey].buttonLabel}</span>
                                         </div>
                                         {activeDocument === docKey && (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-sky-600 dark:text-sky-400" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
                                         )}
@@ -599,8 +598,8 @@ const App: React.FC = () => {
                             </ul>
                         </div>
 
-                        <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-                             <h3 className="px-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">جدول المحتويات</h3>
+                        <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6">
+                             <h3 className="px-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">جدول المحتويات</h3>
                             <TableOfContents
                                 sections={filteredSections}
                                 bookmarkedSections={bookmarkedSections}
@@ -626,26 +625,26 @@ const App: React.FC = () => {
               </aside>
 
               <article className="flex-1 w-full min-w-0">
-                <div className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-lg shadow-sm border border-slate-200/80 dark:border-slate-700/80">
+                <div className="bg-white dark:bg-zinc-800/50 p-6 md:p-8 rounded-lg border border-zinc-200/80 dark:border-zinc-800">
                     {introductionMatch && introduction.title && (
-                      <div id="introduction-section" className="scroll-mt-24 mb-12 border-b border-slate-200 dark:border-slate-700 pb-8">
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-50 mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
+                      <div id="introduction-section" className="scroll-mt-24 mb-12 border-b border-zinc-200 dark:border-zinc-700 pb-8">
+                        <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
                         {introduction.paragraphs && (
-                          <div className={`space-y-4 text-slate-700 dark:text-slate-300 ${textClasses}`}>
+                          <div className={`space-y-4 text-zinc-700 dark:text-zinc-300 ${textClasses}`}>
                             {introduction.paragraphs.map((p, index) => (
                               <p key={index}>{highlightText(p, lowercasedQuery)}</p>
                             ))}
                           </div>
                         )}
                         {introduction.sections && (
-                          <div className={`mt-6 space-y-2 text-slate-700 dark:text-slate-300 ${textClasses}`}>
+                          <div className={`mt-6 space-y-2 text-zinc-700 dark:text-zinc-300 ${textClasses}`}>
                               {introduction.sections.map((s, index) => (
                                   <p key={index} className="pl-4">{highlightText(s, lowercasedQuery)}</p>
                               ))}
                           </div>
                         )}
                         {introduction.conclusion && (
-                          <p className={`mt-6 text-slate-700 dark:text-slate-300 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
+                          <p className={`mt-6 text-zinc-700 dark:text-zinc-300 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
                         )}
                       </div>
                     )}
@@ -658,8 +657,8 @@ const App: React.FC = () => {
 
                           return (
                             <section key={section.title} id={sectionSlug} className="scroll-mt-24">
-                              <div className="flex justify-between items-start mb-6 border-b border-slate-200 dark:border-slate-700 pb-5">
-                                <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50">
+                              <div className="flex justify-between items-start mb-6 border-b border-zinc-200 dark:border-zinc-700 pb-5">
+                                <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
                                   {highlightText(section.title, searchQuery)}
                                 </h2>
                                 <div className="flex items-center gap-1 -mr-2">
@@ -667,10 +666,10 @@ const App: React.FC = () => {
                                     onClick={() => toggleBookmark(activeDocument, sectionSlug)}
                                     aria-label={isBookmarked ? `Remove bookmark for section: ${section.title}` : `Bookmark section: ${section.title}`}
                                     title={isBookmarked ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
-                                    className="p-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors duration-200"
+                                    className="p-2 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 text-zinc-500 dark:text-zinc-400 transition-colors duration-200"
                                   >
                                     {isBookmarked ? (
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600 dark:text-blue-500" fill="currentColor" viewBox="0 0 16 16">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-sky-600 dark:text-sky-500" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/>
                                       </svg>
                                     ) : (
@@ -683,7 +682,7 @@ const App: React.FC = () => {
                                     onClick={() => handleOpenShareModal(section.title, sectionSlug)}
                                     aria-label={`Share section: ${section.title}`}
                                     title="مشاركة القسم"
-                                    className="p-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors duration-200"
+                                    className="p-2 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 text-zinc-500 dark:text-zinc-400 transition-colors duration-200"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
@@ -694,12 +693,12 @@ const App: React.FC = () => {
                               </div>
 
                               {section.metadata && (
-                                <div className="mb-6 bg-slate-50/70 dark:bg-slate-700/30 p-4 rounded-lg border border-slate-200 dark:border-slate-600/50">
+                                <div className="mb-6 bg-zinc-50/70 dark:bg-zinc-700/30 p-4 rounded-lg border border-zinc-200 dark:border-zinc-600/50">
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                                     {Object.entries(section.metadata).map(([key, value]) => (
                                       <React.Fragment key={key}>
-                                        <div className="font-semibold text-slate-600 dark:text-slate-300">{key}</div>
-                                        <div className="text-slate-800 dark:text-slate-200">{value}</div>
+                                        <div className="font-semibold text-zinc-600 dark:text-zinc-300">{key}</div>
+                                        <div className="text-zinc-800 dark:text-zinc-200">{value}</div>
                                       </React.Fragment>
                                     ))}
                                   </div>
@@ -710,15 +709,15 @@ const App: React.FC = () => {
                                 <ol className="space-y-5">
                                   {section.points.map((point) => (
                                     <li key={point.id} className={`flex items-start ${textClasses}`}>
-                                      <span className="ml-4 text-lg font-bold text-slate-500 dark:text-slate-400">{point.id}.</span>
-                                      <span className="flex-1 text-slate-700 dark:text-slate-300">{highlightText(point.text, searchQuery)}</span>
+                                      <span className="ml-4 text-lg font-bold text-zinc-500 dark:text-zinc-400">{point.id}.</span>
+                                      <span className="flex-1 text-zinc-700 dark:text-zinc-300">{highlightText(point.text, searchQuery)}</span>
                                     </li>
                                   ))}
                                 </ol>
                               )}
 
                               {section.paragraphs && (
-                                <div className={`space-y-5 text-slate-700 dark:text-slate-300 ${textClasses}`}>
+                                <div className={`space-y-5 text-zinc-700 dark:text-zinc-300 ${textClasses}`}>
                                     {section.paragraphs.map((paragraph, index) => (
                                         <p key={index}>{highlightText(paragraph, searchQuery)}</p>
                                     ))}
@@ -747,7 +746,6 @@ const App: React.FC = () => {
       </main>
 
       <Footer />
-      <Chatbot />
       <BackToTopButton />
     </div>
   );

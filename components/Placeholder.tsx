@@ -7,7 +7,7 @@ interface PlaceholderProps {
 }
 
 const EmptyStateIcon = () => (
-    <svg className="mx-auto h-16 w-16 text-slate-400 dark:text-slate-500" width="24" height="24" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="mx-auto h-16 w-16 text-zinc-400 dark:text-zinc-500" width="24" height="24" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M10 10v.01" />
         <path d="M14 14v.01" />
@@ -36,12 +36,12 @@ const icons = {
 
 const Placeholder: React.FC<PlaceholderProps> = ({ type, title, message }) => {
     return (
-        <div className="text-center py-12 px-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+        <div className="text-center py-12 px-6 bg-transparent rounded-lg">
             <div className="mb-4">
                 {icons[type]}
             </div>
-            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">{title}</h3>
-            <p className="text-slate-500 dark:text-slate-400">{message}</p>
+            <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-200 mb-2">{title}</h3>
+            <p className="text-zinc-500 dark:text-zinc-400">{message}</p>
         </div>
     );
 };
