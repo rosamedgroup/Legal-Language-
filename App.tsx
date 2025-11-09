@@ -11,6 +11,7 @@ import { Section } from './data/content';
 import { highlightText, slugify } from './utils';
 import { notoKufiArabicFont } from './data/notoKufiArabicFont';
 import Chatbot from './components/Chatbot';
+import Placeholder from './components/Placeholder';
 
 // Static Imports for all documents to ensure stability
 import * as enhancementsContent from './data/content';
@@ -550,25 +551,78 @@ const App: React.FC = () => {
                 lg:sticky lg:top-24 lg:w-64 lg:p-0 lg:pr-4 lg:bg-transparent dark:lg:bg-transparent lg:shadow-none lg:max-h-[calc(100vh-6rem)]
                 ${isTocOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0
               `}>
+                {/* Mobile panel header */}
                 <div className="flex justify-between items-center mb-4 lg:hidden">
-                  <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider">المحتويات</h2>
-                  <button 
-                    onClick={() => setIsTocOpen(false)} 
-                    className="p-2 -mr-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
-                    aria-label="Close table of contents"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-600 dark:text-slate-300" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                    </svg>
-                  </button>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">القائمة</h2>
+                    <button 
+                        onClick={() => setIsTocOpen(false)} 
+                        className="p-2 -mr-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
+                        aria-label="Close menu"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-600 dark:text-slate-300" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </button>
                 </div>
-                <TableOfContents
-                  sections={filteredSections}
-                  bookmarkedSections={bookmarkedSections}
-                  onToggleBookmark={(slug) => toggleBookmark(activeDocument, slug)}
-                  activeSection={activeSection}
-                  setActiveSection={setActiveSection}
-                />
+
+                {/* Mobile simplified menu */}
+                <div className="lg:hidden h-[calc(100%-4rem)] overflow-y-auto">
+                    <div className="space-y-8">
+                        <div>
+                            <h3 className="px-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">اختر وثيقة</h3>
+                            <ul className="space-y-1">
+                                {(Object.keys(documents) as DocumentType[]).map((docKey) => (
+                                <li key={docKey}>
+                                    <button
+                                        onClick={() => {
+                                            handleDocumentChange(docKey);
+                                            setIsTocOpen(false); // Close panel on selection
+                                        }}
+                                        className={`w-full text-right px-3 py-2 text-sm transition-colors duration-200 flex justify-between items-center rounded-md ${
+                                            activeDocument === docKey
+                                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-semibold'
+                                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        <div className="flex flex-col text-right">
+                                            <span className="font-medium">{documents[docKey].title}</span>
+                                            <span className={`text-xs ${activeDocument === docKey ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>{documents[docKey].buttonLabel}</span>
+                                        </div>
+                                        {activeDocument === docKey && (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                        )}
+                                    </button>
+                                </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                             <h3 className="px-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">جدول المحتويات</h3>
+                            <TableOfContents
+                                sections={filteredSections}
+                                bookmarkedSections={bookmarkedSections}
+                                onToggleBookmark={(slug) => toggleBookmark(activeDocument, slug)}
+                                activeSection={activeSection}
+                                setActiveSection={setActiveSection}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Desktop TOC view */}
+                <div className="hidden lg:block h-full">
+                    <TableOfContents
+                    sections={filteredSections}
+                    bookmarkedSections={bookmarkedSections}
+                    onToggleBookmark={(slug) => toggleBookmark(activeDocument, slug)}
+                    activeSection={activeSection}
+                    setActiveSection={setActiveSection}
+                    />
+                </div>
+
               </aside>
 
               <article className="flex-1 w-full min-w-0">
@@ -604,7 +658,7 @@ const App: React.FC = () => {
 
                           return (
                             <section key={section.title} id={sectionSlug} className="scroll-mt-24">
-                              <div className="flex justify-between items-start mb-5 border-b border-slate-200 dark:border-slate-700 pb-4">
+                              <div className="flex justify-between items-start mb-6 border-b border-slate-200 dark:border-slate-700 pb-5">
                                 <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50">
                                   {highlightText(section.title, searchQuery)}
                                 </h2>
@@ -612,6 +666,7 @@ const App: React.FC = () => {
                                   <button
                                     onClick={() => toggleBookmark(activeDocument, sectionSlug)}
                                     aria-label={isBookmarked ? `Remove bookmark for section: ${section.title}` : `Bookmark section: ${section.title}`}
+                                    title={isBookmarked ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
                                     className="p-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors duration-200"
                                   >
                                     {isBookmarked ? (
@@ -627,6 +682,7 @@ const App: React.FC = () => {
                                   <button
                                     onClick={() => handleOpenShareModal(section.title, sectionSlug)}
                                     aria-label={`Share section: ${section.title}`}
+                                    title="مشاركة القسم"
                                     className="p-2 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors duration-200"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
@@ -677,10 +733,11 @@ const App: React.FC = () => {
                       </div>
                     ) : (
                       searchQuery && !introductionMatch && (
-                        <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                          <h3 className="text-2xl font-bold mb-2">لا توجد نتائج</h3>
-                          <p>لم نتمكن من العثور على أي نتائج لبحثك عن "{searchQuery}".</p>
-                        </div>
+                        <Placeholder 
+                            type="empty" 
+                            title="لا توجد نتائج" 
+                            message={`لم نتمكن من العثور على أي نتائج لبحثك عن "${searchQuery}".`} 
+                        />
                       )
                     )}
                 </div>

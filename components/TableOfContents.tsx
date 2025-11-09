@@ -22,12 +22,12 @@ const BookmarkOutlineIcon: React.FC = () => (
   </svg>
 );
 
-const ChevronIcon: React.FC<{ isOpen: boolean }> = ({ isOpen }) => (
+const ChevronIcon: React.FC<{ isOpen: boolean; className?: string }> = ({ isOpen, className = '' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     className={`h-5 w-5 text-slate-500 dark:text-slate-400 transform transition-transform duration-300 ${
       isOpen ? 'rotate-180' : 'rotate-0'
-    }`}
+    } ${className}`}
     viewBox="0 0 20 20"
     fill="currentColor"
   >
@@ -39,7 +39,7 @@ const ChevronIcon: React.FC<{ isOpen: boolean }> = ({ isOpen }) => (
   </svg>
 );
 
-// A single TOC item component to reduce repetition
+// A single TOC item component to reduce repetition, used for flat lists (bookmarks, search results)
 const TocItem: React.FC<{
   section: Section;
   activeSection: string;
@@ -60,18 +60,18 @@ const TocItem: React.FC<{
       id={id}
       role="option"
       aria-selected={isFocused}
-      className={`group flex justify-between items-center gap-2 transition-colors duration-150 ${
-        isFocused ? 'bg-slate-200/60 dark:bg-slate-700/60 rounded-md' : ''
+      className={`group flex justify-between items-center gap-2 rounded-md transition-colors duration-150 ${
+        isFocused ? 'bg-slate-200/60 dark:bg-slate-700/60' : ''
       }`}
     >
       <a
         href={`#${sectionSlug}`}
         onClick={(e) => onLinkClick(e, sectionSlug)}
         tabIndex={-1} // Items are navigated via arrow keys, not tab
-        className={`flex-1 text-sm duration-200 py-1 px-1 rounded-l-md ${
+        className={`flex-1 text-sm duration-200 py-1.5 px-2.5 rounded-l-md transition-colors ${
             isActive
-            ? 'text-blue-600 font-semibold dark:text-blue-400'
-            : 'text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400'
+            ? 'bg-blue-100 text-blue-700 font-semibold dark:bg-blue-900/50 dark:text-blue-300'
+            : 'text-slate-600 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-700/60'
         }`}
       >
         {displayText || section.title}
@@ -79,7 +79,7 @@ const TocItem: React.FC<{
       <button
         onClick={() => onToggleBookmark(sectionSlug)}
         aria-label={isBookmarked ? `Remove bookmark for ${section.title}` : `Bookmark section ${section.title}`}
-        className={`p-1 mr-1 rounded-full transition-all duration-200 ${
+        className={`p-1.5 mr-1 rounded-full transition-all duration-200 ${
             isBookmarked 
             ? 'text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400' 
             : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 opacity-0 group-hover:opacity-100 focus:opacity-100'
@@ -91,6 +91,17 @@ const TocItem: React.FC<{
     </li>
   );
 };
+
+interface TocNode {
+    key: string;
+    title: string;
+    section?: Section;
+    children: TocNode[];
+}
+
+interface FlatTocNode extends TocNode {
+    level: number;
+}
 
 
 const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedSections, onToggleBookmark, activeSection, setActiveSection }) => {
@@ -108,42 +119,88 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
     section.title.toLowerCase().includes(jumpQuery.toLowerCase().trim())
   ), [sections, jumpQuery]);
   
-  const groupedSections = useMemo(() => {
-    if (jumpQuery.trim() !== '') return null; // Don't group when searching
+  const tocTree = useMemo((): TocNode[] | null => {
+    if (jumpQuery.trim() !== '') return null;
 
-    const groups: Record<string, Section[]> = {};
+    const rootNodes: TocNode[] = [];
+    const nodeMap = new Map<string, TocNode>();
+
     sections.forEach(section => {
-      const titleParts = section.title.split(/ - |:/);
-      const groupTitle = titleParts[0].trim();
+        const parts = section.title.split(/ - |: /);
+        let currentPath = '';
+        let parentNode: TocNode | undefined;
 
-      if (!groups[groupTitle]) {
-        groups[groupTitle] = [];
-      }
-      groups[groupTitle].push(section);
+        parts.forEach((part, index) => {
+            const oldPath = currentPath;
+            currentPath = oldPath ? `${oldPath}|${part}` : part;
+
+            let node = nodeMap.get(currentPath);
+            if (!node) {
+                node = { key: currentPath, title: part, children: [] };
+                nodeMap.set(currentPath, node);
+
+                if (parentNode) {
+                    if (!parentNode.children.find(c => c.key === node.key)) {
+                        parentNode.children.push(node);
+                    }
+                } else {
+                    if (!rootNodes.find(r => r.key === node.key)) {
+                        rootNodes.push(node);
+                    }
+                }
+            }
+
+            if (index === parts.length - 1) {
+                node.section = section;
+            }
+            parentNode = node;
+        });
     });
-    return groups;
+    return rootNodes;
   }, [sections, jumpQuery]);
   
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    // Default groups to expanded when component mounts or groups change
-    const initialExpandedState: Record<string, boolean> = {};
-    if (groupedSections) {
-      Object.keys(groupedSections).forEach(groupTitle => {
-        initialExpandedState[groupTitle] = true;
-      });
+    const initialState: Record<string, boolean> = {};
+    const setExpanded = (nodes: TocNode[]) => {
+        nodes.forEach(node => {
+            initialState[node.key] = true;
+            if (node.children.length > 0) {
+                setExpanded(node.children);
+            }
+        });
+    };
+    if (tocTree) {
+        setExpanded(tocTree);
     }
-    setExpandedGroups(initialExpandedState);
-  }, [groupedSections]);
+    setExpandedNodes(initialState);
+  }, [tocTree]);
 
-  const toggleGroup = (groupTitle: string) => {
-    setExpandedGroups(prev => ({
+  const toggleNode = (nodeKey: string) => {
+    setExpandedNodes(prev => ({
       ...prev,
-      [groupTitle]: !prev[groupTitle],
+      [nodeKey]: !prev[nodeKey],
     }));
   };
   
+  const flatTocList = useMemo((): FlatTocNode[] | null => {
+    if (!tocTree) return null;
+    
+    const flatList: FlatTocNode[] = [];
+    const traverse = (nodes: TocNode[], level: number) => {
+        nodes.forEach(node => {
+            flatList.push({ ...node, level });
+            if ((expandedNodes[node.key] ?? true) && node.children.length > 0) {
+                traverse(node.children, level + 1);
+            }
+        });
+    };
+    
+    traverse(tocTree, 0);
+    return flatList;
+  }, [tocTree, expandedNodes]);
+
   // Smooth scroll handler for TOC links
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
       e.preventDefault();
@@ -165,7 +222,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
   // This effect handles the keyboard navigation logic.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        const itemCount = itemRefs.current.size;
+        const itemCount = (jumpQuery ? filteredTocSections.length : flatTocList?.length ?? 0) + bookmarkedSections.length;
         if (itemCount === 0) return;
 
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -193,7 +250,12 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                 e.preventDefault();
                 const element = itemRefs.current.get(focusedIndex);
                 const link = element?.querySelector('a');
-                link?.click();
+                if (link) {
+                    link.click();
+                } else {
+                    const button = element?.querySelector('button');
+                    button?.click();
+                }
             }
         }
     };
@@ -207,13 +269,13 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
             container.removeEventListener('keydown', handleKeyDown);
         }
     };
-  }, [focusedIndex]);
+  }, [focusedIndex, flatTocList, filteredTocSections, jumpQuery, bookmarkedSections.length]);
   
   // Reset focus when search query or other state changes, as the list of items is altered.
   useEffect(() => {
       setFocusedIndex(-1);
       itemRefs.current.clear(); // Clear refs when list re-renders to get a fresh count.
-  }, [jumpQuery, isBookmarksOpen, expandedGroups, sections]);
+  }, [jumpQuery, isBookmarksOpen, flatTocList, sections, bookmarkedSections.length]);
 
   // Scroll active item into view when user scrolls the main content
   useEffect(() => {
@@ -271,7 +333,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
           >
             {isBookmarksOpen && (
               <nav aria-label="Bookmarked sections">
-                  <ol role="listbox" className="space-y-2 pr-2">
+                  <ol role="listbox" className="space-y-1.5 pr-2">
                   {bookmarkedSections.map((section) => {
                       const currentIndex = itemCounter++;
                       return (
@@ -317,65 +379,73 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
         </div>
         
         <nav ref={navRef} aria-label="Table of contents" className="flex-1 overflow-y-auto pr-1 -mr-2">
-            {groupedSections ? (
-                <ul className="space-y-1">
-                    {Object.entries(groupedSections).map(([groupTitle, groupSectionsValue]) => {
-                        // FIX: Add type assertion to resolve incorrect type inference for groupSectionsValue.
-                        const groupSections = groupSectionsValue as Section[];
-                        const isExpanded = expandedGroups[groupTitle] ?? false;
-                        const isCollapsible = !(groupSections.length === 1 && groupSections[0].title === groupTitle);
-                        
-                        if (!isCollapsible) {
-                            const currentIndex = itemCounter++;
-                            return <TocItem 
-                                key={groupSections[0].title} 
-                                section={groupSections[0]} 
-                                onToggleBookmark={onToggleBookmark} 
-                                activeSection={activeSection} 
-                                isBookmarked={bookmarkedSlugs.has(slugify(groupSections[0].title))} 
-                                isFocused={currentIndex === focusedIndex}
-                                itemRef={el => itemRefs.current.set(currentIndex, el)}
-                                id={`toc-item-${currentIndex}`}
-                                onLinkClick={handleLinkClick}
-                            />;
-                        }
+            {tocTree && flatTocList ? (
+                <ol role="listbox" className="space-y-1.5">
+                  {flatTocList.map(node => {
+                    const currentIndex = itemCounter++;
+                    const hasChildren = node.children.length > 0;
+                    const isExpanded = expandedNodes[node.key] ?? true;
+                    const isBookmarked = !!node.section && bookmarkedSlugs.has(slugify(node.section.title));
+                    const isActive = !!node.section && activeSection === slugify(node.section.title);
+                    
+                    const TreeChevronIcon: React.FC<{ isOpen: boolean }> = ({ isOpen }) => (
+                        <ChevronIcon isOpen={isOpen} className={isOpen ? '!rotate-180' : ''}/>
+                    );
 
-                        return (
-                            <li key={groupTitle}>
-                                <button onClick={() => toggleGroup(groupTitle)} className="w-full flex justify-between items-center text-right py-1.5 rounded" aria-expanded={isExpanded}>
-                                    <span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{groupTitle}</span>
-                                    <ChevronIcon isOpen={isExpanded} />
-                                </button>
-                                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                                  {isExpanded && (
-                                    <ol role="listbox" className="space-y-1.5 pr-3 pt-2 pb-1 border-r border-slate-200 dark:border-slate-700">
-                                        {groupSections.map(section => {
-                                            const currentIndex = itemCounter++;
-                                            return (
-                                                <TocItem 
-                                                    key={section.title}
-                                                    section={section}
-                                                    activeSection={activeSection}
-                                                    isBookmarked={bookmarkedSlugs.has(slugify(section.title))}
-                                                    onToggleBookmark={onToggleBookmark}
-                                                    displayText={section.title.replace(groupTitle, '').replace(/^(\s*-\s*|:\s*)/, '')}
-                                                    isFocused={currentIndex === focusedIndex}
-                                                    itemRef={el => itemRefs.current.set(currentIndex, el)}
-                                                    id={`toc-item-${currentIndex}`}
-                                                    onLinkClick={handleLinkClick}
-                                                />
-                                            );
-                                        })}
-                                    </ol>
-                                  )}
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
+                    return (
+                        <li 
+                            key={node.key}
+                            ref={el => itemRefs.current.set(currentIndex, el)}
+                            id={`toc-item-${currentIndex}`}
+                            role="option"
+                            aria-selected={currentIndex === focusedIndex}
+                            className={`group flex flex-col justify-between items-start gap-1 rounded-md transition-colors duration-150 text-sm ${
+                                currentIndex === focusedIndex ? 'bg-slate-200/60 dark:bg-slate-700/60' : ''
+                            }`}
+                            style={{ paddingRight: `${node.level * 0.75}rem` }}
+                        >
+                            <div className="flex items-center w-full">
+                                {hasChildren ? (
+                                    <button onClick={() => toggleNode(node.key)} className="p-1 -mr-1 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60" aria-label={isExpanded ? 'Collapse section' : 'Expand section'}>
+                                        <TreeChevronIcon isOpen={isExpanded} />
+                                    </button>
+                                ) : (
+                                    <div className="w-6 h-6 flex-shrink-0"></div>
+                                )}
+                                <a
+                                    href={node.section ? `#${slugify(node.section.title)}` : '#'}
+                                    onClick={(e) => node.section && handleLinkClick(e, slugify(node.section.title))}
+                                    tabIndex={-1}
+                                    className={`flex-1 min-w-0 truncate py-1.5 px-2 rounded-l-md transition-colors ${
+                                        isActive
+                                        ? 'text-blue-700 font-semibold dark:text-blue-300'
+                                        : `text-slate-600 dark:text-slate-300 ${!node.section ? 'cursor-default font-medium text-slate-800 dark:text-slate-200' : 'hover:bg-slate-200/60 dark:hover:bg-slate-700/60'}`
+                                    }`}
+                                >
+                                    {node.title}
+                                </a>
+                                {node.section && (
+                                    <button
+                                        onClick={() => onToggleBookmark(slugify(node.section.title))}
+                                        aria-label={isBookmarked ? `Remove bookmark for ${node.section.title}` : `Bookmark section ${node.section.title}`}
+                                        className={`p-1.5 mr-1 rounded-full transition-all duration-200 flex-shrink-0 ${
+                                            isBookmarked 
+                                            ? 'text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400' 
+                                            : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 opacity-0 group-hover:opacity-100 focus:opacity-100'
+                                        }`}
+                                        tabIndex={-1}
+                                    >
+                                        {isBookmarked ? <BookmarkFilledIcon /> : <BookmarkOutlineIcon />}
+                                    </button>
+                                )}
+                            </div>
+                        </li>
+                    )
+                  })}
+                </ol>
             ) : (
                 filteredTocSections.length > 0 ? (
-                    <ol role="listbox" className="space-y-2">
+                    <ol role="listbox" className="space-y-1.5">
                         {filteredTocSections.map(section => {
                             const currentIndex = itemCounter++;
                             return (

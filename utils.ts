@@ -99,12 +99,16 @@ const relatedSectionsCache = new Map<string, Promise<string[]>>();
 
 // Queue to manage API requests and avoid rate limiting
 let isProcessingQueue = false;
+const MAX_RETRIES = 4;
+const INITIAL_DELAY_MS = 3000; // Increased delay for safety, ~20 RPM.
+
 const requestQueue: {
     resolve: (value: string[] | PromiseLike<string[]>) => void;
     reject: (reason?: any) => void;
     currentSection: Section;
     allSections: Section[];
     cacheKey: string;
+    retries: number;
 }[] = [];
 
 async function processQueue() {
@@ -113,7 +117,16 @@ async function processQueue() {
     }
     isProcessingQueue = true;
 
-    const { resolve, reject, currentSection, allSections, cacheKey } = requestQueue.shift()!;
+    const request = requestQueue.shift()!;
+    const { resolve, reject, currentSection, allSections, cacheKey, retries } = request;
+
+    // A helper to schedule the next queue processing
+    const scheduleNext = (delay: number) => {
+        setTimeout(() => {
+            isProcessingQueue = false;
+            processQueue();
+        }, delay);
+    };
 
     try {
         const { Type } = await import("@google/genai");
@@ -130,8 +143,7 @@ async function processQueue() {
 
         if (otherSectionTitles.length === 0) {
             resolve([]);
-            isProcessingQueue = false;
-            processQueue(); // Process next item immediately
+            scheduleNext(50); // Small delay for non-API resolution
             return;
         }
         
@@ -185,21 +197,42 @@ async function processQueue() {
             resolve([]);
         }
 
+        // On success, continue with normal delay
+        scheduleNext(INITIAL_DELAY_MS);
+
     } catch (error) {
-        console.error('Error fetching related sections from Gemini API:', error);
-        relatedSectionsCache.delete(cacheKey); // Invalidate cache on error
-        reject(error);
-    } finally {
-        // Add a delay to respect rate limits (e.g., 60 RPM) before processing the next request.
-        setTimeout(() => {
-            isProcessingQueue = false;
-            processQueue(); // Process next item
-        }, 1100); // ~55 requests per minute, safely below the limit.
+        console.error(`Error fetching related sections from Gemini API for "${cacheKey}":`, error);
+
+        const errorString = error instanceof Error ? error.message : String(error);
+        const isRateLimitError = errorString.includes('"status":"RESOURCE_EXHAUSTED"') || errorString.includes('429');
+
+        if (isRateLimitError && retries < MAX_RETRIES) {
+            // Re-queue with increased retry count
+            const newRequest = { ...request, retries: retries + 1 };
+            requestQueue.unshift(newRequest); // Add to the front of the queue
+
+            // Calculate backoff delay
+            const backoffDelay = INITIAL_DELAY_MS * Math.pow(2, retries) + Math.random() * 1000;
+            console.warn(`Rate limit hit for "${cacheKey}". Retrying in ${backoffDelay.toFixed(0)}ms... (Attempt ${retries + 1})`);
+            
+            scheduleNext(backoffDelay);
+
+        } else {
+            // Max retries reached or a different error, so reject
+            if (isRateLimitError) {
+                 console.error(`Max retries (${MAX_RETRIES}) reached for "${cacheKey}". Giving up.`);
+            }
+            relatedSectionsCache.delete(cacheKey); // Invalidate cache on error
+            reject(error);
+            
+            // Continue processing queue after a standard delay even on permanent failure
+            scheduleNext(INITIAL_DELAY_MS);
+        }
     }
 }
 
 /**
- * Finds related sections using the Gemini API based on semantic similarity, with queuing to prevent rate-limiting.
+ * Finds related sections using the Gemini API based on semantic similarity, with queuing and exponential backoff to prevent rate-limiting.
  * @param currentSection The section to find relations for.
  * @param allSections An array of all available sections in the document.
  * @returns A promise that resolves to an array of related section titles.
@@ -211,7 +244,7 @@ export const getRelatedSections = (currentSection: Section, allSections: Section
     }
 
     const promise = new Promise<string[]>((resolve, reject) => {
-        requestQueue.push({ resolve, reject, currentSection, allSections, cacheKey });
+        requestQueue.push({ resolve, reject, currentSection, allSections, cacheKey, retries: 0 });
         if (!isProcessingQueue) {
             processQueue();
         }

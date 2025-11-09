@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Section } from '../data/content';
 import { getRelatedSections, slugify } from '../utils';
+import Placeholder from './Placeholder';
 
 interface RelatedSectionsProps {
   currentSection: Section;
@@ -38,6 +39,7 @@ const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) =
 const RelatedSections: React.FC<RelatedSectionsProps> = ({ currentSection, allSections }) => {
   const [related, setRelated] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hasBeenVisible, setHasBeenVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -69,12 +71,14 @@ const RelatedSections: React.FC<RelatedSectionsProps> = ({ currentSection, allSe
   useEffect(() => {
     if (hasBeenVisible) {
       setIsLoading(true);
+      setError(null);
       getRelatedSections(currentSection, allSections)
         .then(relatedTitles => {
           setRelated(relatedTitles);
         })
         .catch(err => {
           console.error("Failed to load related sections", err);
+          setError("لم نتمكن من تحميل الأقسام ذات الصلة. يرجى المحاولة مرة أخرى لاحقاً.");
           // Set empty array on error
           setRelated([]);
         })
@@ -88,6 +92,8 @@ const RelatedSections: React.FC<RelatedSectionsProps> = ({ currentSection, allSe
     <div ref={ref} className="mt-8 pt-6 border-t border-slate-200/80 dark:border-slate-700/80 related-sections-container min-h-[100px]">
       {isLoading ? (
         <RelatedSectionsSkeleton />
+      ) : error ? (
+        <Placeholder type="error" title="حدث خطأ" message={error} />
       ) : related.length > 0 ? (
         <>
           <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-3">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DocumentType, Theme } from '../App';
+import Logo from './assets/Logo';
 
 interface HeaderProps {
   onToggleSettings: () => void;
@@ -45,20 +46,6 @@ const MoonIcon: React.FC = () => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
     </svg>
 );
-
-
-const Logo: React.FC = () => (
-    <a href={window.location.pathname.split('?')[0]} className="flex items-center gap-2 flex-shrink-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md">
-         <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
-            <path d="M12 3v18" />
-            <path d="M3 7h18" />
-            <path d="M5 7l-2 5h4l-2-5z" />
-            <path d="M19 7l-2 5h4l-2-5z" />
-        </svg>
-      <span className="font-bold text-lg text-slate-800 dark:text-slate-200 hidden sm:inline group-hover:text-slate-900 dark:group-hover:text-white transition-colors">ADL.sa</span>
-    </a>
-)
-
 
 const Header: React.FC<HeaderProps> = ({ 
   onToggleSettings, 
@@ -145,7 +132,7 @@ const Header: React.FC<HeaderProps> = ({
                 <button 
                     onClick={onToggleToc}
                     className="p-2 -ml-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 lg:hidden"
-                    aria-label="Open table of contents"
+                    aria-label="Open navigation menu"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -213,17 +200,23 @@ const Header: React.FC<HeaderProps> = ({
                 </ActionButton>
                 
                 {/* Document Switcher */}
-                <div ref={navRef} className="relative">
-                    <ActionButton onClick={() => setIsNavOpen(prev => !prev)} ariaLabel="Switch document">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+                <div ref={navRef} className="relative hidden lg:block">
+                    <button
+                        onClick={() => setIsNavOpen(prev => !prev)}
+                        aria-label="Switch document"
+                        aria-haspopup="true"
+                        aria-expanded={isNavOpen}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-md transition-colors"
+                    >
+                        <span>{currentDoc.buttonLabel}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isNavOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
-                    </ActionButton>
+                    </button>
 
-                    {isNavOpen && (
                     <div 
                         id="document-navigation-menu"
-                        className="absolute top-full right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-40"
+                        className={`absolute top-full right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-40 transition-all duration-200 ease-out origin-top-right ${isNavOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
                         role="menu"
                     >
                         <div className="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
@@ -255,7 +248,6 @@ const Header: React.FC<HeaderProps> = ({
                           ))}
                         </ul>
                     </div>
-                    )}
                 </div>
             </div>
         </div>
