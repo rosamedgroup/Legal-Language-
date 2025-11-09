@@ -35,7 +35,7 @@ const BackToTopButton: React.FC = () => {
         <button
           onClick={scrollToTop}
           aria-label="Go to top"
-          className="fixed bottom-6 right-6 z-50 p-3 bg-sky-600 hover:bg-sky-700 text-white rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-sky-500 opacity-0 animate-fade-in back-to-top-button"
+          className="fixed bottom-6 right-6 z-50 p-3 bg-sky-600 hover:bg-sky-700 text-white rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-50 dark:focus:ring-offset-zinc-900 focus:ring-sky-500 opacity-0 animate-fade-in back-to-top-button"
           style={{ animationFillMode: 'forwards' }}
         >
           <svg

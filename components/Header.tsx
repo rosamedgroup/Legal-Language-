@@ -22,7 +22,7 @@ const ActionButton: React.FC<{ onClick: () => void; ariaLabel: string; children:
         onClick={onClick}
         aria-label={ariaLabel}
         disabled={disabled}
-        className="p-2 rounded-full hover:bg-zinc-200/70 dark:hover:bg-zinc-700/70 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="p-2 rounded-full hover:bg-zinc-200/70 dark:hover:bg-zinc-700/70 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-50 dark:focus:ring-offset-zinc-900 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
     >
         {children}
     </button>
@@ -206,7 +206,7 @@ const Header: React.FC<HeaderProps> = ({
                         aria-label="Switch document"
                         aria-haspopup="true"
                         aria-expanded={isNavOpen}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-md transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 focus:ring-offset-zinc-100 dark:focus:ring-offset-zinc-800"
                     >
                         <span>{currentDoc.buttonLabel}</span>
                         <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-transform duration-200 ${isNavOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">

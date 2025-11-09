@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Logo: React.FC = () => (
-    <a href={window.location.pathname.split('?')[0]} className="flex items-center gap-3 flex-shrink-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded-md">
+    <a href={window.location.pathname.split('?')[0]} className="flex items-center gap-3 flex-shrink-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-900 focus-visible:ring-sky-500 rounded-md">
          <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-sky-600 dark:bg-sky-500 group-hover:bg-sky-700 dark:group-hover:bg-sky-400 transition-colors duration-200">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:scale-110">
                 <path d="M16 16.5a2.5 2.5 0 0 0-5 0M21 12a9 9 0 0 0-9-9 9 9 0 0 0-9 9" />

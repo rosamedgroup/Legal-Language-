@@ -205,21 +205,22 @@ async function processQueue() {
 
         const errorString = error instanceof Error ? error.message : String(error);
         const isRateLimitError = errorString.includes('"status":"RESOURCE_EXHAUSTED"') || errorString.includes('429');
+        const isServerError = errorString.includes('"code":500');
 
-        if (isRateLimitError && retries < MAX_RETRIES) {
+        if ((isRateLimitError || isServerError) && retries < MAX_RETRIES) {
             // Re-queue with increased retry count
             const newRequest = { ...request, retries: retries + 1 };
             requestQueue.unshift(newRequest); // Add to the front of the queue
 
             // Calculate backoff delay
             const backoffDelay = INITIAL_DELAY_MS * Math.pow(2, retries) + Math.random() * 1000;
-            console.warn(`Rate limit hit for "${cacheKey}". Retrying in ${backoffDelay.toFixed(0)}ms... (Attempt ${retries + 1})`);
+            console.warn(`API error for "${cacheKey}". Retrying in ${backoffDelay.toFixed(0)}ms... (Attempt ${retries + 1})`);
             
             scheduleNext(backoffDelay);
 
         } else {
             // Max retries reached or a different error, so reject
-            if (isRateLimitError) {
+            if (isRateLimitError || isServerError) {
                  console.error(`Max retries (${MAX_RETRIES}) reached for "${cacheKey}". Giving up.`);
             }
             relatedSectionsCache.delete(cacheKey); // Invalidate cache on error
