@@ -1,7 +1,4 @@
 import React from 'react';
-// FIX: Add imports for Gemini API and Section type for the new getRelatedSections function.
-import { GoogleGenAI, Type } from '@google/genai';
-import { Section } from './data/content';
 
 /**
  * Converts a string into a URL-friendly slug.
@@ -80,73 +77,4 @@ export const highlightText = (text: string, highlight: string): React.ReactNode 
             React.createElement('strong', { key: index }, renderedContent) : 
             React.createElement(React.Fragment, { key: index }, renderedContent);
     });
-};
-
-// FIX: Added the missing getRelatedSections function to find related sections using Gemini API.
-export const getRelatedSections = async (currentSection: Section, allSections: Section[]): Promise<string[]> => {
-  if (!process.env.API_KEY) {
-    console.error("API_KEY environment variable not set.");
-    return [];
-  }
-  
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-    // Prepare content for the prompt
-    const currentSectionContent = `Title: ${currentSection.title}\nContent: ${
-      currentSection.paragraphs?.join('\n') || ''
-    } ${currentSection.points?.map(p => p.text).join('\n') || ''}`;
-
-    const otherSectionTitles = allSections
-      .filter(s => s.title !== currentSection.title)
-      .map(s => s.title);
-
-    if (otherSectionTitles.length === 0) {
-      return [];
-    }
-
-    const prompt = `Based on the following section content, identify the 3 most semantically related section titles from the provided list of available sections.
-
-      Current Section:
-      ---
-      ${currentSectionContent}
-      ---
-      List of available sections:
-      ---
-      ${otherSectionTitles.join('\n')}
-      ---
-      
-      Respond with a JSON array containing the titles of the top 3 most related sections.`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.STRING,
-            description: 'The title of a related section.'
-          }
-        },
-      },
-    });
-
-    const jsonText = response.text.trim();
-    const result = JSON.parse(jsonText);
-    
-    if (Array.isArray(result)) {
-      // Filter to ensure returned titles actually exist in the list, and limit to 3.
-      const validTitles = result.filter(title => otherSectionTitles.includes(title as string));
-      return validTitles.slice(0, 3);
-    }
-    
-    return [];
-
-  } catch (error) {
-    console.error("Error getting related sections from Gemini:", error);
-    // Return empty array on error to prevent UI crash
-    return [];
-  }
 };

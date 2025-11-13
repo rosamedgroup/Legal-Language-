@@ -594,7 +594,6 @@ const App: React.FC = () => {
                                     ))}
                                 </div>
                               )}
-
                             </section>
                           )
                         })}
