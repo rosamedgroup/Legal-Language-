@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Point, Section as SectionType } from '../data/content';
-// FIX: Changed findRelatedSections to getRelatedSections to match the exported function from utils.
+// FIX: Imported getRelatedSections from utils to resolve module not found error.
 import { slugify, highlightText, getRelatedSections } from '../utils';
 
 interface ContentSectionProps {
@@ -9,7 +9,6 @@ interface ContentSectionProps {
   paragraphs?: string[];
   textClasses: string;
   searchQuery: string;
-  onShare: (title: string, slug: string) => void;
   allSections: SectionType[];
   isBookmarked: boolean;
   onToggleBookmark: () => void;
@@ -21,7 +20,6 @@ const ContentSection: React.FC<ContentSectionProps> = ({
   paragraphs, 
   textClasses, 
   searchQuery, 
-  onShare, 
   allSections,
   isBookmarked,
   onToggleBookmark
@@ -62,16 +60,6 @@ const ContentSection: React.FC<ContentSectionProps> = ({
                 <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
               </svg>
             )}
-          </button>
-          <button
-            onClick={() => onShare(title, slugify(title))}
-            aria-label={`Share section: ${title}`}
-            className="p-2 rounded-full hover:bg-slate-200/60 text-slate-500 transition-colors duration-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
-                <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
-            </svg>
           </button>
         </div>
       </div>

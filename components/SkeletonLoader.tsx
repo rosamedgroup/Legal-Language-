@@ -1,7 +1,7 @@
 import React from 'react';
 
 const SkeletonBar: React.FC<{ width?: string; height?: string }> = ({ width = 'w-full', height = 'h-4' }) => (
-    <div className={`${width} ${height} bg-gray-200 rounded animate-pulse`}></div>
+    <div className={`${width} ${height} bg-[rgb(var(--background-tertiary))] rounded animate-pulse`}></div>
 );
 
 const SkeletonLoader: React.FC = () => {
@@ -27,10 +27,10 @@ const SkeletonLoader: React.FC = () => {
             </aside>
 
             {/* Content Skeleton */}
-            <div className="flex-1 mt-12 lg:mt-0 bg-white p-6 md:p-10 rounded-lg border border-gray-200">
+            <div className="flex-1 mt-12 lg:mt-0 bg-[rgb(var(--background-secondary))] p-6 md:p-10 rounded-lg border border-[rgb(var(--border-primary))]">
                 <div className="space-y-12">
                     {/* Introduction Section Skeleton */}
-                    <div className="space-y-6 pb-8 border-b-2 border-gray-200">
+                    <div className="space-y-6 pb-8 border-b border-[rgb(var(--border-secondary))]">
                         <SkeletonBar width="w-1/2" height="h-10" />
                         <div className="space-y-3">
                             <SkeletonBar />

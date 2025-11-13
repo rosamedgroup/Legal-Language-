@@ -4,12 +4,9 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import TableOfContents from './components/TableOfContents';
 import SettingsPanel from './components/SettingsPanel';
-import ShareModal from './components/ShareModal';
 import BackToTopButton from './components/BackToTopButton';
-import RelatedSections from './components/RelatedSections';
 import { Section } from './data/content';
 import { highlightText, slugify } from './utils';
-import { notoKufiArabicFont } from './data/notoKufiArabicFont';
 import Placeholder from './components/Placeholder';
 
 // Static Imports for all documents to ensure stability
@@ -141,13 +138,10 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [inputValue, setInputValue] = useState(''); // For immediate input feedback
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [shareContent, setShareContent] = useState<{ title: string; url: string } | null>(null);
   const [activeDocument, setActiveDocument] = useState<DocumentType>(getInitialDocument());
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [bookmarks, setBookmarks] = useState<Bookmarks>({});
   const [isTocOpen, setIsTocOpen] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('introduction-section');
 
   // Debounce search input
@@ -271,97 +265,6 @@ const App: React.FC = () => {
     setTheme(isCurrentlyDark ? 'light' : 'dark');
   };
 
-  const handlePrintToPdf = async () => {
-    const { jsPDF } = (window as any).jspdf;
-    const html2canvas = (window as any).html2canvas;
-    const contentToPrint = document.querySelector('article > div');
-    
-    if (!contentToPrint || !html2canvas || !jsPDF) {
-        console.error("Required libraries or content for PDF generation not found!");
-        return;
-    }
-
-    setIsPrinting(true);
-
-    const style = document.createElement('style');
-    style.id = 'print-font-style';
-    // Using Amiri font from notoKufiArabicFont.ts to ensure it's loaded and doesn't corrupt canvas
-    style.innerHTML = `
-      @font-face {
-        font-family: 'Amiri';
-        src: url(data:application/font-ttf;charset=utf-8;base64,${notoKufiArabicFont}) format('truetype');
-        font-weight: normal;
-        font-style: normal;
-      }
-      .printing-content * {
-        font-family: 'Amiri', sans-serif !important;
-      }
-    `;
-    document.head.appendChild(style);
-    (contentToPrint as HTMLElement).classList.add('printing-content');
-
-    const backToTopButton = document.querySelector('.back-to-top-button') as HTMLElement;
-    if (backToTopButton) backToTopButton.style.display = 'none';
-
-    // Brief delay to ensure font is applied before canvas capture
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    try {
-        const canvas = await html2canvas(contentToPrint as HTMLElement, {
-            scale: 2, // Keep higher scale for better quality
-            useCORS: true,
-            backgroundColor: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff', // zinc-900
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        
-        const margin = 15;
-        const effectiveWidth = pdfWidth - (margin * 2);
-        const ratio = canvasWidth / effectiveWidth;
-        const effectiveHeight = canvasHeight / ratio;
-        
-        let heightLeft = effectiveHeight;
-        let position = 0;
-        const pageUsableHeight = pdfHeight - (margin * 2);
-        
-        // Add the first page
-        pdf.addImage(imgData, 'PNG', margin, position + margin, effectiveWidth, effectiveHeight);
-        heightLeft -= pageUsableHeight;
-        
-        // Add subsequent pages
-        while (heightLeft > 0) {
-            position -= pageUsableHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', margin, position + margin, effectiveWidth, effectiveHeight);
-            heightLeft -= pageUsableHeight;
-        }
-
-        const filename = `${documents[activeDocument].title}.pdf`;
-        pdf.save(filename);
-
-    } catch (error) {
-        console.error("Failed to generate PDF", error);
-        alert("Sorry, there was an error creating the PDF. Please try again.");
-    } finally {
-        if (backToTopButton) backToTopButton.style.display = '';
-        // Cleanup
-        (contentToPrint as HTMLElement).classList.remove('printing-content');
-        const styleElement = document.getElementById('print-font-style');
-        if (styleElement) {
-            styleElement.remove();
-        }
-        setIsPrinting(false);
-    }
-  };
-
-
   const currentDocInfo = documents[activeDocument];
   const { introduction, sections } = currentDocInfo.content;
 
@@ -380,18 +283,6 @@ const App: React.FC = () => {
   const textClasses = `${fontSizeClassMap[fontSize]} ${lineHeightClassMap[lineHeight]}`;
   
   const lowercasedQuery = searchQuery.toLowerCase().trim();
-
-  const handleOpenShareModal = (title: string, slug?: string) => {
-    const baseUrl = window.location.href.split('#')[0].split('?')[0];
-    const url = slug ? `${baseUrl}?doc=${activeDocument}#${slug}` : `${baseUrl}?doc=${activeDocument}`;
-    setShareContent({ title, url });
-    setIsShareModalOpen(true);
-  };
-
-  const handleCloseShareModal = () => {
-    setIsShareModalOpen(false);
-    setShareContent(null);
-  };
 
   const getScore = (section: Section, query: string): number => {
     if (!query) return 1;
@@ -497,15 +388,12 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header 
         onToggleSettings={() => setShowSettings(!showSettings)} 
         onToggleToc={() => setIsTocOpen(!isTocOpen)}
         searchQuery={inputValue}
         onSearchChange={setInputValue}
-        onShare={() => handleOpenShareModal(currentDocInfo.title)}
-        onPrint={handlePrintToPdf}
-        isPrinting={isPrinting}
         activeDocument={activeDocument}
         onDocumentChange={handleDocumentChange}
         documents={documents}
@@ -524,12 +412,6 @@ const App: React.FC = () => {
         onThemeChange={setTheme}
         onResetSettings={handleResetSettings}
       />
-
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={handleCloseShareModal}
-        content={shareContent}
-      />
       
       <main className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
         <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
@@ -546,19 +428,19 @@ const App: React.FC = () => {
 
               {/* TOC Sidebar / Off-canvas */}
               <aside className={`
-                fixed top-0 right-0 h-full w-72 bg-zinc-50 dark:bg-zinc-800 shadow-lg z-50 p-4 transition-transform duration-300 ease-in-out 
-                lg:sticky lg:top-24 lg:w-64 lg:p-0 lg:pr-4 lg:bg-transparent dark:lg:bg-transparent lg:shadow-none lg:max-h-[calc(100vh-6rem)]
+                fixed top-0 right-0 h-full w-72 bg-[rgb(var(--background-secondary))] shadow-xl z-50 p-4 transition-transform duration-300 ease-in-out 
+                lg:sticky lg:top-24 lg:w-64 lg:p-0 lg:pr-4 lg:bg-transparent lg:shadow-none lg:max-h-[calc(100vh-6rem)]
                 ${isTocOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0
               `}>
                 {/* Mobile panel header */}
                 <div className="flex justify-between items-center mb-4 lg:hidden">
-                    <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">القائمة</h2>
+                    <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">القائمة</h2>
                     <button 
                         onClick={() => setIsTocOpen(false)} 
-                        className="p-2 -mr-2 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60"
+                        className="p-2 -mr-2 rounded-full hover:bg-[rgb(var(--background-tertiary))]"
                         aria-label="Close menu"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-zinc-600 dark:text-zinc-300" fill="currentColor" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[rgb(var(--text-secondary))]" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                         </svg>
                     </button>
@@ -568,7 +450,7 @@ const App: React.FC = () => {
                 <div className="lg:hidden h-[calc(100%-4rem)] overflow-y-auto">
                     <div className="space-y-8">
                         <div>
-                            <h3 className="px-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">اختر وثيقة</h3>
+                            <h3 className="px-1 text-xs font-semibold text-[rgb(var(--text-tertiary))] uppercase tracking-wider mb-3">اختر وثيقة</h3>
                             <ul className="space-y-1">
                                 {(Object.keys(documents) as DocumentType[]).map((docKey) => (
                                 <li key={docKey}>
@@ -579,16 +461,16 @@ const App: React.FC = () => {
                                         }}
                                         className={`w-full text-right px-3 py-2 text-sm transition-colors duration-200 flex justify-between items-center rounded-md ${
                                             activeDocument === docKey
-                                            ? 'bg-sky-50 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300 font-semibold'
-                                            : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                                            ? 'bg-[rgba(var(--primary),0.1)] text-[rgb(var(--primary))] font-semibold'
+                                            : 'text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--background-tertiary))]'
                                         }`}
                                     >
                                         <div className="flex flex-col text-right">
                                             <span className="font-medium">{documents[docKey].title}</span>
-                                            <span className={`text-xs ${activeDocument === docKey ? 'text-sky-600 dark:text-sky-400' : 'text-zinc-500 dark:text-zinc-400'}`}>{documents[docKey].buttonLabel}</span>
+                                            <span className={`text-xs ${activeDocument === docKey ? 'text-[rgb(var(--primary))]' : 'text-[rgb(var(--text-tertiary))]'}`}>{documents[docKey].buttonLabel}</span>
                                         </div>
                                         {activeDocument === docKey && (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-sky-600 dark:text-sky-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[rgb(var(--primary))]" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
                                         )}
@@ -598,8 +480,8 @@ const App: React.FC = () => {
                             </ul>
                         </div>
 
-                        <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6">
-                             <h3 className="px-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">جدول المحتويات</h3>
+                        <div className="border-t border-[rgb(var(--border-primary))] pt-6">
+                             <h3 className="px-1 text-xs font-semibold text-[rgb(var(--text-tertiary))] uppercase tracking-wider mb-3">جدول المحتويات</h3>
                             <TableOfContents
                                 sections={filteredSections}
                                 bookmarkedSections={bookmarkedSections}
@@ -625,26 +507,26 @@ const App: React.FC = () => {
               </aside>
 
               <article className="flex-1 w-full min-w-0">
-                <div className="bg-white dark:bg-zinc-800/50 p-6 md:p-8 rounded-lg border border-zinc-200/80 dark:border-zinc-800">
+                <div className="bg-[rgb(var(--background-secondary))] p-6 md:p-8 rounded-lg shadow-sm border border-[rgb(var(--border-primary))]">
                     {introductionMatch && introduction.title && (
-                      <div id="introduction-section" className="scroll-mt-24 mb-12 border-b border-zinc-200 dark:border-zinc-700 pb-8">
-                        <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
+                      <div id="introduction-section" className="scroll-mt-24 mb-12 border-b border-[rgb(var(--border-secondary))] pb-8">
+                        <h2 className="text-3xl md:text-4xl font-bold text-[rgb(var(--text-primary))] mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
                         {introduction.paragraphs && (
-                          <div className={`space-y-4 text-zinc-700 dark:text-zinc-300 ${textClasses}`}>
+                          <div className={`space-y-4 text-[rgb(var(--text-secondary))] ${textClasses}`}>
                             {introduction.paragraphs.map((p, index) => (
                               <p key={index}>{highlightText(p, lowercasedQuery)}</p>
                             ))}
                           </div>
                         )}
                         {introduction.sections && (
-                          <div className={`mt-6 space-y-2 text-zinc-700 dark:text-zinc-300 ${textClasses}`}>
+                          <div className={`mt-6 space-y-2 text-[rgb(var(--text-secondary))] ${textClasses}`}>
                               {introduction.sections.map((s, index) => (
                                   <p key={index} className="pl-4">{highlightText(s, lowercasedQuery)}</p>
                               ))}
                           </div>
                         )}
                         {introduction.conclusion && (
-                          <p className={`mt-6 text-zinc-700 dark:text-zinc-300 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
+                          <p className={`mt-6 text-[rgb(var(--text-secondary))] ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
                         )}
                       </div>
                     )}
@@ -657,8 +539,8 @@ const App: React.FC = () => {
 
                           return (
                             <section key={section.title} id={sectionSlug} className="scroll-mt-24">
-                              <div className="flex justify-between items-start mb-6 border-b border-zinc-200 dark:border-zinc-700 pb-5">
-                                <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+                              <div className="flex justify-between items-start mb-6 border-b border-[rgb(var(--border-secondary))] pb-5">
+                                <h2 className="text-2xl md:text-3xl font-bold text-[rgb(var(--text-primary))]">
                                   {highlightText(section.title, searchQuery)}
                                 </h2>
                                 <div className="flex items-center gap-1 -mr-2">
@@ -666,10 +548,10 @@ const App: React.FC = () => {
                                     onClick={() => toggleBookmark(activeDocument, sectionSlug)}
                                     aria-label={isBookmarked ? `Remove bookmark for section: ${section.title}` : `Bookmark section: ${section.title}`}
                                     title={isBookmarked ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
-                                    className="p-2 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 text-zinc-500 dark:text-zinc-400 transition-colors duration-200"
+                                    className="p-2 rounded-full hover:bg-[rgb(var(--background-tertiary))] text-[rgb(var(--text-tertiary))] transition-colors duration-200"
                                   >
                                     {isBookmarked ? (
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-sky-600 dark:text-sky-500" fill="currentColor" viewBox="0 0 16 16">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[rgb(var(--primary))]" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/>
                                       </svg>
                                     ) : (
@@ -678,27 +560,16 @@ const App: React.FC = () => {
                                       </svg>
                                     )}
                                   </button>
-                                  <button
-                                    onClick={() => handleOpenShareModal(section.title, sectionSlug)}
-                                    aria-label={`Share section: ${section.title}`}
-                                    title="مشاركة القسم"
-                                    className="p-2 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 text-zinc-500 dark:text-zinc-400 transition-colors duration-200"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
-                                        <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
-                                    </svg>
-                                  </button>
                                 </div>
                               </div>
 
                               {section.metadata && (
-                                <div className="mb-6 bg-zinc-50/70 dark:bg-zinc-700/30 p-4 rounded-lg border border-zinc-200 dark:border-zinc-600/50">
+                                <div className="mb-6 bg-[rgb(var(--background-primary))] p-4 rounded-lg border border-[rgb(var(--border-primary))]">
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                                     {Object.entries(section.metadata).map(([key, value]) => (
                                       <React.Fragment key={key}>
-                                        <div className="font-semibold text-zinc-600 dark:text-zinc-300">{key}</div>
-                                        <div className="text-zinc-800 dark:text-zinc-200">{value}</div>
+                                        <div className="font-semibold text-[rgb(var(--text-secondary))]">{key}</div>
+                                        <div className="text-[rgb(var(--text-primary))]">{value}</div>
                                       </React.Fragment>
                                     ))}
                                   </div>
@@ -709,23 +580,21 @@ const App: React.FC = () => {
                                 <ol className="space-y-5">
                                   {section.points.map((point) => (
                                     <li key={point.id} className={`flex items-start ${textClasses}`}>
-                                      <span className="ml-4 text-lg font-bold text-zinc-500 dark:text-zinc-400">{point.id}.</span>
-                                      <span className="flex-1 text-zinc-700 dark:text-zinc-300">{highlightText(point.text, searchQuery)}</span>
+                                      <span className="ml-4 text-lg font-bold text-[rgb(var(--text-tertiary))]">{point.id}.</span>
+                                      <span className="flex-1 text-[rgb(var(--text-secondary))]">{highlightText(point.text, searchQuery)}</span>
                                     </li>
                                   ))}
                                 </ol>
                               )}
 
                               {section.paragraphs && (
-                                <div className={`space-y-5 text-zinc-700 dark:text-zinc-300 ${textClasses}`}>
+                                <div className={`space-y-5 text-[rgb(var(--text-secondary))] ${textClasses}`}>
                                     {section.paragraphs.map((paragraph, index) => (
                                         <p key={index}>{highlightText(paragraph, searchQuery)}</p>
                                     ))}
                                 </div>
                               )}
 
-                              <RelatedSections currentSection={section} allSections={sections} />
-                              
                             </section>
                           )
                         })}

@@ -9,22 +9,51 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --background-primary: 248 250 252; /* slate-50 */
+        --background-secondary: 255 255 255; /* white */
+        --background-tertiary: 241 245 249; /* slate-100 */
+        --border-primary: 226 232 240; /* slate-200 */
+        --border-secondary: 241 245 249; /* slate-100 */
+        --text-primary: 30 41 59; /* slate-800 */
+        --text-secondary: 51 65 85; /* slate-700 */
+        --text-tertiary: 100 116 139; /* slate-500 */
+        --primary: 59 130 246; /* blue-500 */
+        --primary-hover: 37 99 235; /* blue-600 */
+        --primary-foreground: 255 255 255; /* white */
+        --ring: 59 130 246; /* blue-500 */
+      }
+      .dark {
+        --background-primary: 15 23 42; /* slate-900 */
+        --background-secondary: 30 41 59; /* slate-800 */
+        --background-tertiary: 51 65 85; /* slate-700 */
+        --border-primary: 51 65 85; /* slate-700 */
+        --border-secondary: 40 52 70; /* custom */
+        --text-primary: 241 245 249; /* slate-100 */
+        --text-secondary: 203 213 225; /* slate-300 */
+        --text-tertiary: 148 163 184; /* slate-400 */
+        --primary: 96 165 250; /* blue-400 */
+        --primary-hover: 59 130 246; /* blue-500 */
+        --primary-foreground: 15 23 42; /* slate-900 */
+        --ring: 96 165 250; /* blue-400 */
+      }
       html {
         scroll-behavior: smooth;
       }
       body {
         font-family: 'Almarai', sans-serif;
+        background-color: rgb(var(--background-primary));
+        color: rgb(var(--text-primary));
       }
       mark {
-        background-color: #e0f2fe; /* bg-sky-100 */
-        color: #0c4a6e; /* text-sky-900 */
+        background-color: rgba(var(--primary), 0.15);
+        color: rgb(var(--primary-hover));
         padding: 0 3px;
         border-radius: 3px;
       }
-      .dark mark {
-        background-color: #0c4a6e; /* bg-sky-900 */
-        color: #e0f2fe; /* text-sky-100 */
-      }
+     .dark mark {
+        color: rgb(var(--primary));
+     }
     </style>
     <script>
       // Prevents flash of incorrect theme by applying it before React loads.
@@ -44,9 +73,6 @@
         }
       })();
     </script>
-    <!-- PDF Generation Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="importmap">
 {
   "imports": {
@@ -58,7 +84,7 @@
 }
 </script>
 </head>
-  <body class="bg-zinc-50 dark:bg-zinc-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

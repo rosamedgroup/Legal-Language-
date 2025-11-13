@@ -25,7 +25,7 @@ const BookmarkOutlineIcon: React.FC = () => (
 const ChevronIcon: React.FC<{ isOpen: boolean; className?: string }> = ({ isOpen, className = '' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    className={`h-5 w-5 text-zinc-500 dark:text-zinc-400 transform transition-transform duration-300 ${
+    className={`h-5 w-5 text-[rgb(var(--text-tertiary))] transform transition-transform duration-300 ${
       isOpen ? 'rotate-180' : 'rotate-0'
     } ${className}`}
     viewBox="0 0 20 20"
@@ -60,18 +60,21 @@ const TocItem: React.FC<{
       id={id}
       role="option"
       aria-selected={isFocused}
-      className={`group flex justify-between items-center gap-2 rounded-md transition-colors duration-150 ${
-        isFocused ? 'bg-zinc-200/60 dark:bg-zinc-700/60' : ''
+      className={`group flex justify-between items-center gap-2 rounded-md transition-colors duration-150 relative ${
+        isActive ? 'bg-[rgba(var(--primary),0.1)]' : ''
+      } ${
+        isFocused && !isActive ? 'bg-[rgb(var(--background-tertiary))]' : ''
       }`}
     >
+      {isActive && <div className="absolute right-0 top-1 bottom-1 w-0.5 bg-[rgb(var(--primary))] rounded-full"></div>}
       <a
         href={`#${sectionSlug}`}
         onClick={(e) => onLinkClick(e, sectionSlug)}
         tabIndex={-1} // Items are navigated via arrow keys, not tab
-        className={`flex-1 text-sm duration-200 py-1.5 px-2.5 rounded-l-md transition-colors ${
+        className={`flex-1 text-sm duration-200 py-1.5 px-2.5 rounded-md transition-colors ${
             isActive
-            ? 'bg-sky-100 text-sky-700 font-semibold dark:bg-sky-900/50 dark:text-sky-300'
-            : 'text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-700/60'
+            ? 'text-[rgb(var(--primary))] font-semibold'
+            : 'text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]'
         }`}
       >
         {displayText || section.title}
@@ -81,8 +84,8 @@ const TocItem: React.FC<{
         aria-label={isBookmarked ? `Remove bookmark for ${section.title}` : `Bookmark section ${section.title}`}
         className={`p-1.5 mr-1 rounded-full transition-all duration-200 ${
             isBookmarked 
-            ? 'text-sky-600 hover:text-sky-700 dark:text-sky-500 dark:hover:text-sky-400' 
-            : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 opacity-0 group-hover:opacity-100 focus:opacity-100'
+            ? 'text-[rgb(var(--primary))] hover:text-[rgb(var(--primary-hover))]' 
+            : 'text-[rgb(var(--text-tertiary))] hover:text-[rgb(var(--text-secondary))] opacity-0 group-hover:opacity-100 focus:opacity-100'
         }`}
         tabIndex={-1}
       >
@@ -304,20 +307,20 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
   
   return (
     <div 
-        className="h-full flex flex-col focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-800 rounded-md" 
+        className="h-full flex flex-col focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] focus:ring-offset-2 focus:ring-offset-[rgb(var(--background-primary))] rounded-md" 
         ref={containerRef} 
         tabIndex={0}
         aria-activedescendant={focusedIndex !== -1 ? `toc-item-${focusedIndex}` : undefined}
     >
       {bookmarkedSections.length > 0 && (
-        <div className="mb-4 pb-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="mb-4 pb-4 border-b border-[rgb(var(--border-primary))]">
            <button
             onClick={() => setIsBookmarksOpen(!isBookmarksOpen)}
-            className="w-full flex justify-between items-center text-right font-semibold"
+            className="w-full flex justify-between items-center text-right"
             aria-expanded={isBookmarksOpen}
             aria-controls="bookmarks-list"
           >
-            <h3 className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            <h3 className="flex items-center gap-2 text-xs text-[rgb(var(--text-tertiary))] uppercase tracking-wider font-semibold">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/>
                 </svg>
@@ -344,14 +347,8 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                               isBookmarked={true}
                               onToggleBookmark={onToggleBookmark}
                               isFocused={currentIndex === focusedIndex}
-                              // FIX: Improved ref handling in lists to correctly manage element mounting and unmounting, preventing potential memory leaks and resolving type errors.
-                              itemRef={(el) => {
-                                  if (el) {
-                                      itemRefs.current.set(currentIndex, el);
-                                  } else {
-                                      itemRefs.current.delete(currentIndex);
-                                  }
-                              }}
+                              // FIX: The ref callback should not return a value. Wrapped in braces to ensure a void return type.
+                              itemRef={el => { itemRefs.current.set(currentIndex, el); }}
                               id={`toc-item-${currentIndex}`}
                               onLinkClick={handleLinkClick}
                           />
@@ -365,7 +362,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
       )}
 
       <div className="flex-1 flex flex-col min-h-0">
-        <h2 className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold">
+        <h2 className="text-xs text-[rgb(var(--text-tertiary))] uppercase tracking-wider font-semibold">
           جدول المحتويات
         </h2>
         
@@ -375,11 +372,11 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
           placeholder="اقفز إلى قسم..."
           value={jumpQuery}
           onChange={(e) => setJumpQuery(e.target.value)}
-          className="w-full pl-3 pr-10 py-2 bg-zinc-100 dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600 rounded-md text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 text-sm"
+          className="w-full pl-3 pr-10 py-2 bg-[rgb(var(--background-tertiary))] border-[rgb(var(--border-primary))] rounded-md text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--text-tertiary))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] focus:border-[rgb(var(--ring))] transition-all duration-200 text-sm"
           aria-label="Jump to section"
           />
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" fill="currentColor" viewBox="0 0 16 16">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[rgb(var(--text-tertiary))]" fill="currentColor" viewBox="0 0 16 16">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
           </svg>
           </div>
@@ -402,25 +399,22 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                     return (
                         <li 
                             key={node.key}
-                            // FIX: Changed concise arrow function to block body to prevent returning a value from the ref callback. Added cleanup logic to remove the element from the refs map on unmount.
-                            ref={(el) => {
-                                if (el) {
-                                    itemRefs.current.set(currentIndex, el);
-                                } else {
-                                    itemRefs.current.delete(currentIndex);
-                                }
-                            }}
+                            // FIX: The ref callback should not return a value. Wrapped in braces to ensure a void return type.
+                            ref={el => { itemRefs.current.set(currentIndex, el); }}
                             id={`toc-item-${currentIndex}`}
                             role="option"
                             aria-selected={currentIndex === focusedIndex}
-                            className={`group flex flex-col justify-between items-start gap-1 rounded-md transition-colors duration-150 text-sm ${
-                                currentIndex === focusedIndex ? 'bg-zinc-200/60 dark:bg-zinc-700/60' : ''
+                            className={`group flex flex-col justify-between items-start rounded-md transition-colors duration-150 text-sm relative ${
+                                isActive ? 'bg-[rgba(var(--primary),0.1)]' : ''
+                            } ${
+                                currentIndex === focusedIndex && !isActive ? 'bg-[rgb(var(--background-tertiary))]' : ''
                             }`}
                             style={{ paddingRight: `${node.level * 0.75}rem` }}
                         >
+                            {isActive && <div className="absolute right-0 top-1 bottom-1 w-0.5 bg-[rgb(var(--primary))] rounded-full"></div>}
                             <div className="flex items-center w-full">
                                 {hasChildren ? (
-                                    <button onClick={() => toggleNode(node.key)} className="p-1 -mr-1 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60" aria-label={isExpanded ? 'Collapse section' : 'Expand section'}>
+                                    <button onClick={() => toggleNode(node.key)} className="p-1 -mr-1 rounded-full hover:bg-[rgb(var(--background-tertiary))]" aria-label={isExpanded ? 'Collapse section' : 'Expand section'}>
                                         <TreeChevronIcon isOpen={isExpanded} />
                                     </button>
                                 ) : (
@@ -430,10 +424,10 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                     href={node.section ? `#${slugify(node.section.title)}` : '#'}
                                     onClick={(e) => node.section && handleLinkClick(e, slugify(node.section.title))}
                                     tabIndex={-1}
-                                    className={`flex-1 min-w-0 truncate py-1.5 px-2 rounded-l-md transition-colors ${
+                                    className={`flex-1 min-w-0 truncate py-1.5 px-2 rounded-md transition-colors ${
                                         isActive
-                                        ? 'text-sky-700 font-semibold dark:text-sky-300'
-                                        : `text-zinc-600 dark:text-zinc-300 ${!node.section ? 'cursor-default font-medium text-zinc-800 dark:text-zinc-200' : 'hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'}`
+                                        ? 'text-[rgb(var(--primary))] font-semibold'
+                                        : `text-[rgb(var(--text-secondary))] ${!node.section ? 'cursor-default font-medium text-[rgb(var(--text-primary))]' : 'hover:text-[rgb(var(--text-primary))]'}`
                                     }`}
                                 >
                                     {node.title}
@@ -444,8 +438,8 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                         aria-label={isBookmarked ? `Remove bookmark for ${node.section.title}` : `Bookmark section ${node.section.title}`}
                                         className={`p-1.5 mr-1 rounded-full transition-all duration-200 flex-shrink-0 ${
                                             isBookmarked 
-                                            ? 'text-sky-600 hover:text-sky-700 dark:text-sky-500 dark:hover:text-sky-400' 
-                                            : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 opacity-0 group-hover:opacity-100 focus:opacity-100'
+                                            ? 'text-[rgb(var(--primary))] hover:text-[rgb(var(--primary-hover))]' 
+                                            : 'text-[rgb(var(--text-tertiary))] hover:text-[rgb(var(--text-secondary))] opacity-0 group-hover:opacity-100 focus:opacity-100'
                                         }`}
                                         tabIndex={-1}
                                     >
@@ -470,14 +464,8 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                     isBookmarked={bookmarkedSlugs.has(slugify(section.title))}
                                     onToggleBookmark={onToggleBookmark}
                                     isFocused={currentIndex === focusedIndex}
-                                    // FIX: Improved ref handling in lists to correctly manage element mounting and unmounting, preventing potential memory leaks and resolving type errors.
-                                    itemRef={(el) => {
-                                        if (el) {
-                                            itemRefs.current.set(currentIndex, el);
-                                        } else {
-                                            itemRefs.current.delete(currentIndex);
-                                        }
-                                    }}
+                                    // FIX: The ref callback should not return a value. Wrapped in braces to ensure a void return type.
+                                    itemRef={el => { itemRefs.current.set(currentIndex, el); }}
                                     id={`toc-item-${currentIndex}`}
                                     onLinkClick={handleLinkClick}
                                 />
@@ -485,7 +473,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                         })}
                     </ol>
                 ) : (
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4 px-2">
+                    <p className="text-sm text-[rgb(var(--text-tertiary))] text-center py-4 px-2">
                         لا توجد أقسام مطابقة.
                     </p>
                 )
