@@ -1,4 +1,4 @@
-// FIX: Corrected import statement for useState and useEffect.
+
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -13,21 +13,16 @@ import Placeholder from './components/Placeholder';
 import * as enhancementsContent from './data/content';
 import * as caseStudyContent from './data/caseStudyContent';
 import * as statementOfClaimContent from './data/newCaseContent';
-import * as judicialVerdictContent from './data/judicialVerdictContent';
 import * as newClassificationContent from './data/newClassificationContent';
 import * as moralDamagesContent from './data/moralDamagesContent';
 import * as criminalJusticeQaContent from './data/criminalJusticeQaContent';
 import * as generalJudiciaryQaContent from './data/generalJudiciaryQaContent';
-import * as historicalCasesContent from './data/historicalCasesContent';
-import * as legalAnalysisContent from './data/legalAnalysisContent';
-import * as courtDecisionsContent from './data/courtDecisionsContent';
 import * as arbitrationAwardsContent from './data/arbitrationAwardsContent';
 
 type FontSize = 'base' | 'lg' | 'xl';
 type LineHeight = 'normal' | 'relaxed' | 'loose';
 export type Theme = 'light' | 'dark' | 'system';
-export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'judicialVerdict' | 'newClassification' | 'moralDamages' | 'criminalJusticeQA' | 'generalJudiciaryQA' | 'historicalCases' | 'legalAnalysis' | 'courtDecisions' | 'arbitrationAwards';
-// FIX: Changed Bookmarks to be a partial record to allow initialization with an empty object and fix type errors.
+export type DocumentType = 'enhancements' | 'caseStudy' | 'statementOfClaim' | 'newClassification' | 'moralDamages' | 'criminalJusticeQA' | 'generalJudiciaryQA' | 'arbitrationAwards';
 export type Bookmarks = Partial<Record<DocumentType, string[]>>;
 
 interface AppSettings {
@@ -41,11 +36,6 @@ const defaultSettings: AppSettings = {
   lineHeight: 'relaxed',
   theme: 'system',
 };
-
-interface DocumentContent {
-  introduction: any;
-  sections: Section[];
-}
 
 const documents = {
   enhancements: {
@@ -65,12 +55,6 @@ const documents = {
     buttonLabel: 'لائحة دعوى',
     author: 'مقدمة من: المحامية هيفاء بنت فندي الرويلي',
     content: statementOfClaimContent,
-  },
-  judicialVerdict: {
-    title: 'شكاوى ودعاوى كيدية',
-    buttonLabel: 'دعاوى كيدية',
-    author: 'مجموعة الأحكام القضائية لعام ١٤٣٥هـ',
-    content: judicialVerdictContent,
   },
   newClassification: {
     title: 'التصنيف الجديد للدعاوى',
@@ -96,24 +80,6 @@ const documents = {
     author: 'وزارة العدل',
     content: generalJudiciaryQaContent,
   },
-  historicalCases: {
-    title: 'قضايا تاريخية',
-    buttonLabel: 'قضايا تاريخية',
-    author: 'مجموعة مختارة',
-    content: historicalCasesContent,
-  },
-  legalAnalysis: {
-    title: 'تحليلات قانونية',
-    buttonLabel: 'تحليلات قانونية',
-    author: 'خبراء قانونيون',
-    content: legalAnalysisContent,
-  },
-  courtDecisions: {
-    title: 'قرارات محاكم',
-    buttonLabel: 'قرارات محاكم',
-    author: 'مجموعة مختارة من المحاكم',
-    content: courtDecisionsContent,
-  },
   arbitrationAwards: {
     title: 'أحكام تحكيم',
     buttonLabel: 'أحكام تحكيم',
@@ -137,42 +103,32 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(defaultSettings.theme);
   const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [inputValue, setInputValue] = useState(''); // For immediate input feedback
+  const [inputValue, setInputValue] = useState(''); 
   const [activeDocument, setActiveDocument] = useState<DocumentType>(getInitialDocument());
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [bookmarks, setBookmarks] = useState<Bookmarks>({});
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('introduction-section');
 
-  // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
       setSearchQuery(inputValue);
-    }, 300); // Wait 300ms after user stops typing
-
-    return () => {
-      clearTimeout(handler);
-    };
+    }, 300);
+    return () => clearTimeout(handler);
   }, [inputValue]);
 
   useEffect(() => {
     const handlePopState = () => {
       setActiveDocument(getInitialDocument());
     };
-
     window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
   
-  // Load settings and bookmarks from localStorage on initial render
   useEffect(() => {
     try {
       const storedBookmarks = localStorage.getItem('legal_drafting_bookmarks');
-      if (storedBookmarks) {
-        setBookmarks(JSON.parse(storedBookmarks));
-      }
+      if (storedBookmarks) setBookmarks(JSON.parse(storedBookmarks));
       const storedSettings = localStorage.getItem('legal_drafting_settings');
       if (storedSettings) {
         const settings: AppSettings = JSON.parse(storedSettings);
@@ -185,7 +141,6 @@ const App: React.FC = () => {
     }
   }, []);
   
-  // Save settings to localStorage whenever they change
   useEffect(() => {
     try {
         const settings: AppSettings = { fontSize, lineHeight, theme };
@@ -195,23 +150,10 @@ const App: React.FC = () => {
     }
   }, [fontSize, lineHeight, theme]);
 
-  // Handle theme changes by applying class to <html>
   useEffect(() => {
     const root = window.document.documentElement;
     const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
     root.classList.toggle('dark', isDark);
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (theme === 'system') {
-        root.classList.toggle('dark', e.matches);
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
   const toggleBookmark = (docId: DocumentType, sectionSlug: string) => {
@@ -220,37 +162,25 @@ const App: React.FC = () => {
       const newDocBookmarks = docBookmarks.includes(sectionSlug)
         ? docBookmarks.filter(slug => slug !== sectionSlug)
         : [...docBookmarks, sectionSlug];
-      
-      const newBookmarks = {
-        ...prevBookmarks,
-        [docId]: newDocBookmarks,
-      };
-
-      try {
-        localStorage.setItem('legal_drafting_bookmarks', JSON.stringify(newBookmarks));
-      } catch (error) {
-        console.error("Failed to save bookmarks to localStorage", error);
-      }
-      
+      const newBookmarks = { ...prevBookmarks, [docId]: newDocBookmarks };
+      localStorage.setItem('legal_drafting_bookmarks', JSON.stringify(newBookmarks));
       return newBookmarks;
     });
   };
 
   const handleDocumentChange = (doc: DocumentType) => {
     if (doc === activeDocument) return;
-
     setIsTransitioning(true);
     setTimeout(() => {
       setActiveDocument(doc);
       const url = new URL(window.location.href);
       url.searchParams.set('doc', doc);
-      // Prevent pushState on blob URLs which causes a SecurityError in sandboxed environments
       if (window.location.protocol !== 'blob:') {
         window.history.pushState({ doc }, '', url);
       }
-      window.scrollTo(0, 0); // Scroll to top on new document
-      setTimeout(() => setIsTransitioning(false), 50); // Allow content to render before fading in
-    }, 300); // Match this with CSS transition duration
+      window.scrollTo(0, 0);
+      setTimeout(() => setIsTransitioning(false), 50);
+    }, 300);
   };
 
   const handleResetSettings = () => {
@@ -260,135 +190,68 @@ const App: React.FC = () => {
   };
 
   const handleThemeToggle = () => {
-    const isCurrentlyDark = theme === 'dark' || 
-                           (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const isCurrentlyDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     setTheme(isCurrentlyDark ? 'light' : 'dark');
   };
 
   const currentDocInfo = documents[activeDocument];
   const { introduction, sections } = currentDocInfo.content;
 
-  const fontSizeClassMap: Record<FontSize, string> = {
-    base: 'text-base',
-    lg: 'text-lg',
-    xl: 'text-xl',
-  };
-
-  const lineHeightClassMap: Record<LineHeight, string> = {
-    normal: 'leading-normal',
-    relaxed: 'leading-relaxed',
-    loose: 'leading-loose',
-  };
-
-  const textClasses = `${fontSizeClassMap[fontSize]} ${lineHeightClassMap[lineHeight]}`;
+  const textClasses = `${fontSize === 'base' ? 'text-base' : fontSize === 'lg' ? 'text-lg' : 'text-xl'} ${lineHeight === 'normal' ? 'leading-normal' : lineHeight === 'relaxed' ? 'leading-relaxed' : 'leading-loose'}`;
   
   const lowercasedQuery = searchQuery.toLowerCase().trim();
 
   const getScore = (section: Section, query: string): number => {
     if (!query) return 1;
-
     let score = 0;
     const lowercasedTitle = section.title.toLowerCase();
-
     if (lowercasedTitle === query) score += 100;
     else if (lowercasedTitle.includes(query)) score += 50;
-
     const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    
-    if (section.points) {
-        section.points.forEach(point => {
-            const matches = point.text.toLowerCase().match(regex);
-            if (matches) score += matches.length * 5;
-        });
-    }
-    if (section.paragraphs) {
-        section.paragraphs.forEach(paragraph => {
-            const matches = paragraph.toLowerCase().match(regex);
-            if (matches) score += matches.length * 5;
-        });
-    }
-
+    if (section.points) section.points.forEach(point => {
+        const matches = point.text.toLowerCase().match(regex);
+        if (matches) score += matches.length * 5;
+    });
+    if (section.paragraphs) section.paragraphs.forEach(paragraph => {
+        const matches = paragraph.toLowerCase().match(regex);
+        if (matches) score += matches.length * 5;
+    });
     return score;
   };
 
   const filteredSections = lowercasedQuery === ''
     ? sections
     : sections
-        .map(section => ({
-          ...section,
-          score: getScore(section, lowercasedQuery),
-        }))
+        .map(section => ({ ...section, score: getScore(section, lowercasedQuery) }))
         .filter(section => section.score > 0)
         .sort((a, b) => b.score - a.score);
 
   const introductionMatch = introduction && (lowercasedQuery === '' ||
     (introduction.title && introduction.title.toLowerCase().includes(lowercasedQuery)) ||
-    (introduction.paragraphs && introduction.paragraphs.some(p => p.toLowerCase().includes(lowercasedQuery))) ||
-    (introduction.sections && introduction.sections.some(s => s.toLowerCase().includes(lowercasedQuery))) ||
-    (introduction.conclusion && introduction.conclusion.toLowerCase().includes(lowercasedQuery)));
+    (introduction.paragraphs && introduction.paragraphs.some(p => p.toLowerCase().includes(lowercasedQuery))));
     
-  // Prepare bookmarked sections for the current document
   const currentDocBookmarks = bookmarks[activeDocument] || [];
-  const bookmarkedSections = sections.filter(section => 
-    currentDocBookmarks.includes(slugify(section.title))
-  );
+  const bookmarkedSections = sections.filter(section => currentDocBookmarks.includes(slugify(section.title)));
 
-  // IntersectionObserver to track active section for TOC highlighting
   useEffect(() => {
-    const elements = Array.from(
-      document.querySelectorAll('section[id], div[id="introduction-section"]')
-    );
-
+    const elements = Array.from(document.querySelectorAll('section[id], div[id="introduction-section"]'));
     if (elements.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const intersectingEntry = [...entries]
-          .reverse()
-          .find((entry) => entry.isIntersecting);
-
-        if (intersectingEntry) {
-          setActiveSection(intersectingEntry.target.id);
-        }
-      },
-      {
-        root: null,
-        rootMargin: '0px 0px -80% 0px', // Highlights when the section is in the top 20% of the screen
-        threshold: 0,
-      }
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => {
-      elements.forEach((element) => observer.unobserve(element));
-    };
+    const observer = new IntersectionObserver(entries => {
+      const intersectingEntry = [...entries].reverse().find(entry => entry.isIntersecting);
+      if (intersectingEntry) setActiveSection(intersectingEntry.target.id);
+    }, { rootMargin: '0px 0px -80% 0px' });
+    elements.forEach(el => observer.observe(el));
+    return () => elements.forEach(el => observer.unobserve(el));
   }, [filteredSections, introductionMatch, activeDocument]);
 
-  // Handle body scroll lock when mobile TOC is open
   useEffect(() => {
-    const handleScrollLock = () => {
-        // Tailwind's 'lg' breakpoint is 1024px
-        if (isTocOpen && window.innerWidth < 1024) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-    };
-
-    handleScrollLock(); // Apply on mount and when isTocOpen changes
-
-    window.addEventListener('resize', handleScrollLock);
-
-    return () => {
-        window.removeEventListener('resize', handleScrollLock);
-        document.body.style.overflow = ''; // Always clean up
-    };
+    document.body.style.overflow = (isTocOpen && window.innerWidth < 1024) ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
   }, [isTocOpen]);
 
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col transition-colors duration-300">
       <Header 
         onToggleSettings={() => setShowSettings(!showSettings)} 
         onToggleToc={() => setIsTocOpen(!isTocOpen)}
@@ -413,184 +276,167 @@ const App: React.FC = () => {
         onResetSettings={handleResetSettings}
       />
       
-      <main className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
-        <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-            <div id="printable-content" className="lg:flex lg:gap-8">
+      <main className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex-grow w-full">
+        <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0 scale-[0.99]' : 'opacity-100 scale-100'}`}>
+            <div className="lg:grid lg:grid-cols-12 lg:gap-8">
               
               {/* Mobile TOC Backdrop */}
-              {isTocOpen && (
-                <div 
-                  className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-                  onClick={() => setIsTocOpen(false)}
-                  aria-hidden="true"
-                ></div>
-              )}
+              <div 
+                className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden transition-all duration-300 ease-in-out ${
+                  isTocOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+                onClick={() => setIsTocOpen(false)}
+                aria-hidden={!isTocOpen}
+              ></div>
 
               {/* TOC Sidebar / Off-canvas */}
               <aside className={`
-                fixed top-0 right-0 h-full w-72 bg-[rgb(var(--background-secondary))] shadow-xl z-50 p-4 transition-transform duration-300 ease-in-out 
-                lg:sticky lg:top-24 lg:w-64 lg:p-0 lg:pr-4 lg:bg-transparent lg:shadow-none lg:max-h-[calc(100vh-6rem)]
+                fixed top-0 right-0 h-full w-80 bg-[rgb(var(--background-secondary))] shadow-2xl z-50 p-5 transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) 
+                lg:col-span-3 lg:sticky lg:top-24 lg:h-fit lg:w-full lg:p-0 lg:bg-transparent lg:shadow-none lg:max-h-[calc(100vh-6rem)]
                 ${isTocOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0
               `}>
                 {/* Mobile panel header */}
-                <div className="flex justify-between items-center mb-4 lg:hidden">
-                    <h2 className="text-lg font-bold text-[rgb(var(--text-primary))]">القائمة</h2>
+                <div className="flex justify-between items-center mb-6 lg:hidden">
+                    <h2 className="text-xl font-extrabold text-[rgb(var(--text-primary))]">تصفح المحتوى</h2>
                     <button 
                         onClick={() => setIsTocOpen(false)} 
-                        className="p-2 -mr-2 rounded-full hover:bg-[rgb(var(--background-tertiary))]"
+                        className="p-2 -mr-2 rounded-full hover:bg-[rgb(var(--background-tertiary))] text-[rgb(var(--text-secondary))] transition-colors"
                         aria-label="Close menu"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[rgb(var(--text-secondary))]" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                         </svg>
                     </button>
                 </div>
 
-                {/* Mobile simplified menu */}
-                <div className="lg:hidden h-[calc(100%-4rem)] overflow-y-auto">
-                    <div className="space-y-8">
-                        <div>
-                            <h3 className="px-1 text-xs font-semibold text-[rgb(var(--text-tertiary))] uppercase tracking-wider mb-3">اختر وثيقة</h3>
-                            <ul className="space-y-1">
-                                {(Object.keys(documents) as DocumentType[]).map((docKey) => (
-                                <li key={docKey}>
-                                    <button
-                                        onClick={() => {
-                                            handleDocumentChange(docKey);
-                                            setIsTocOpen(false); // Close panel on selection
-                                        }}
-                                        className={`w-full text-right px-3 py-2 text-sm transition-colors duration-200 flex justify-between items-center rounded-md ${
-                                            activeDocument === docKey
-                                            ? 'bg-[rgba(var(--primary),0.1)] text-[rgb(var(--primary))] font-semibold'
-                                            : 'text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--background-tertiary))]'
-                                        }`}
-                                    >
-                                        <div className="flex flex-col text-right">
-                                            <span className="font-medium">{documents[docKey].title}</span>
-                                            <span className={`text-xs ${activeDocument === docKey ? 'text-[rgb(var(--primary))]' : 'text-[rgb(var(--text-tertiary))]'}`}>{documents[docKey].buttonLabel}</span>
-                                        </div>
-                                        {activeDocument === docKey && (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[rgb(var(--primary))]" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                        </svg>
-                                        )}
-                                    </button>
-                                </li>
-                                ))}
-                            </ul>
-                        </div>
+                <div className="flex flex-col h-full lg:h-auto overflow-hidden">
+                    {/* Mobile document selection */}
+                    <div className="lg:hidden mb-8 overflow-y-auto">
+                        <h3 className="px-1 text-xs font-bold text-[rgb(var(--text-tertiary))] uppercase tracking-[0.1em] mb-4">اختر وثيقة</h3>
+                        <ul className="space-y-1">
+                            {(Object.keys(documents) as DocumentType[]).map((docKey) => (
+                            <li key={docKey}>
+                                <button
+                                    onClick={() => {
+                                        handleDocumentChange(docKey);
+                                        setIsTocOpen(false);
+                                    }}
+                                    className={`w-full text-right px-3 py-3 text-sm transition-all duration-200 flex justify-between items-center rounded-xl ${
+                                        activeDocument === docKey
+                                        ? 'bg-[rgba(var(--primary),0.1)] text-[rgb(var(--primary))] font-bold ring-1 ring-[rgba(var(--primary),0.2)]'
+                                        : 'text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--background-tertiary))]'
+                                    }`}
+                                >
+                                    <div className="flex flex-col text-right">
+                                        <span className="font-semibold">{documents[docKey].title}</span>
+                                        <span className={`text-[10px] mt-0.5 ${activeDocument === docKey ? 'text-[rgb(var(--primary))]' : 'text-[rgb(var(--text-tertiary))]'}`}>{documents[docKey].buttonLabel}</span>
+                                    </div>
+                                    {activeDocument === docKey && (
+                                        <div className="w-2 h-2 rounded-full bg-[rgb(var(--primary))]"></div>
+                                    )}
+                                </button>
+                            </li>
+                            ))}
+                        </ul>
+                    </div>
 
-                        <div className="border-t border-[rgb(var(--border-primary))] pt-6">
-                             <h3 className="px-1 text-xs font-semibold text-[rgb(var(--text-tertiary))] uppercase tracking-wider mb-3">جدول المحتويات</h3>
-                            <TableOfContents
-                                sections={filteredSections}
-                                bookmarkedSections={bookmarkedSections}
-                                onToggleBookmark={(slug) => toggleBookmark(activeDocument, slug)}
-                                activeSection={activeSection}
-                                setActiveSection={setActiveSection}
-                            />
-                        </div>
+                    <div className="flex-1 overflow-y-auto lg:overflow-visible">
+                        <div className="lg:hidden border-t border-[rgb(var(--border-primary))] pt-6 mb-4"></div>
+                        <TableOfContents
+                            sections={filteredSections}
+                            bookmarkedSections={bookmarkedSections}
+                            onToggleBookmark={(slug) => toggleBookmark(activeDocument, slug)}
+                            activeSection={activeSection}
+                            setActiveSection={setActiveSection}
+                        />
                     </div>
                 </div>
-
-                {/* Desktop TOC view */}
-                <div className="hidden lg:block h-full">
-                    <TableOfContents
-                    sections={filteredSections}
-                    bookmarkedSections={bookmarkedSections}
-                    onToggleBookmark={(slug) => toggleBookmark(activeDocument, slug)}
-                    activeSection={activeSection}
-                    setActiveSection={setActiveSection}
-                    />
-                </div>
-
               </aside>
 
-              <article className="flex-1 w-full min-w-0">
-                <div className="bg-[rgb(var(--background-secondary))] p-6 md:p-8 rounded-lg shadow-sm border border-[rgb(var(--border-primary))]">
+              <article className="lg:col-span-9 w-full min-w-0">
+                <div className="bg-[rgb(var(--background-secondary))] p-5 sm:p-8 lg:p-10 rounded-2xl shadow-sm border border-[rgb(var(--border-primary))] overflow-hidden">
                     {introductionMatch && introduction.title && (
-                      <div id="introduction-section" className="scroll-mt-24 mb-12 border-b border-[rgb(var(--border-secondary))] pb-8">
-                        <h2 className="text-3xl md:text-4xl font-bold text-[rgb(var(--text-primary))] mb-6">{highlightText(introduction.title, lowercasedQuery)}</h2>
+                      <div id="introduction-section" className="scroll-mt-24 mb-10 sm:mb-16 border-b border-[rgb(var(--border-secondary))] pb-10">
+                        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[rgb(var(--text-primary))] mb-6 leading-tight">
+                            {highlightText(introduction.title, lowercasedQuery)}
+                        </h2>
                         {introduction.paragraphs && (
-                          <div className={`space-y-4 text-[rgb(var(--text-secondary))] ${textClasses}`}>
+                          <div className={`space-y-5 text-[rgb(var(--text-secondary))] ${textClasses}`}>
                             {introduction.paragraphs.map((p, index) => (
-                              <p key={index}>{highlightText(p, lowercasedQuery)}</p>
+                              <p key={index} className="transition-all duration-200">{highlightText(p, lowercasedQuery)}</p>
                             ))}
                           </div>
                         )}
                         {introduction.sections && (
-                          <div className={`mt-6 space-y-2 text-[rgb(var(--text-secondary))] ${textClasses}`}>
+                          <div className={`mt-8 space-y-3 text-[rgb(var(--text-secondary))] ${textClasses} border-r-4 border-[rgb(var(--primary)/0.2)] pr-4`}>
                               {introduction.sections.map((s, index) => (
-                                  <p key={index} className="pl-4">{highlightText(s, lowercasedQuery)}</p>
+                                  <p key={index} className="font-medium">{highlightText(s, lowercasedQuery)}</p>
                               ))}
                           </div>
                         )}
                         {introduction.conclusion && (
-                          <p className={`mt-6 text-[rgb(var(--text-secondary))] ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
+                          <p className={`mt-8 text-[rgb(var(--text-secondary))] font-medium italic opacity-90 ${textClasses}`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
                         )}
                       </div>
                     )}
                     
                     {filteredSections.length > 0 ? (
-                      <div className="space-y-12">
+                      <div className="space-y-16 sm:space-y-20">
                         {filteredSections.map((section) => {
                           const sectionSlug = slugify(section.title);
                           const isBookmarked = currentDocBookmarks.includes(sectionSlug);
 
                           return (
-                            <section key={section.title} id={sectionSlug} className="scroll-mt-24">
-                              <div className="flex justify-between items-start mb-6 border-b border-[rgb(var(--border-secondary))] pb-5">
-                                <h2 className="text-2xl md:text-3xl font-bold text-[rgb(var(--text-primary))]">
+                            <section key={section.title} id={sectionSlug} className="scroll-mt-24 group/section">
+                              <div className="flex justify-between items-start mb-8 sm:mb-10 border-b border-[rgb(var(--border-secondary))] pb-6">
+                                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[rgb(var(--text-primary))] leading-snug">
                                   {highlightText(section.title, searchQuery)}
                                 </h2>
-                                <div className="flex items-center gap-1 -mr-2">
-                                  <button
+                                <button
                                     onClick={() => toggleBookmark(activeDocument, sectionSlug)}
-                                    aria-label={isBookmarked ? `Remove bookmark for section: ${section.title}` : `Bookmark section: ${section.title}`}
                                     title={isBookmarked ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
-                                    className="p-2 rounded-full hover:bg-[rgb(var(--background-tertiary))] text-[rgb(var(--text-tertiary))] transition-colors duration-200"
-                                  >
-                                    {isBookmarked ? (
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[rgb(var(--primary))]" fill="currentColor" viewBox="0 0 16 16">
+                                    className={`p-2.5 rounded-full transition-all duration-300 ${
+                                        isBookmarked 
+                                        ? 'bg-[rgb(var(--primary)/0.1)] text-[rgb(var(--primary))]' 
+                                        : 'hover:bg-[rgb(var(--background-tertiary))] text-[rgb(var(--text-tertiary))]'
+                                    }`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={isBookmarked ? 0 : 2} viewBox="0 0 16 16">
                                         <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/>
-                                      </svg>
-                                    ) : (
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
-                                      </svg>
-                                    )}
-                                  </button>
-                                </div>
+                                    </svg>
+                                </button>
                               </div>
 
                               {section.metadata && (
-                                <div className="mb-6 bg-[rgb(var(--background-primary))] p-4 rounded-lg border border-[rgb(var(--border-primary))]">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                                <div className="mb-8 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                                     {Object.entries(section.metadata).map(([key, value]) => (
-                                      <React.Fragment key={key}>
-                                        <div className="font-semibold text-[rgb(var(--text-secondary))]">{key}</div>
-                                        <div className="text-[rgb(var(--text-primary))]">{value}</div>
-                                      </React.Fragment>
+                                      <div key={key} className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-1">
+                                        <span className="font-bold text-[rgb(var(--text-tertiary))] text-[10px] uppercase tracking-wider">{key}:</span>
+                                        <span className="text-[rgb(var(--text-primary))] font-medium sm:text-left">{value}</span>
+                                      </div>
                                     ))}
                                   </div>
                                 </div>
                               )}
                               
                               {section.points && (
-                                <ol className="space-y-5">
+                                <ol className="space-y-6 list-none">
                                   {section.points.map((point) => (
-                                    <li key={point.id} className={`flex items-start ${textClasses}`}>
-                                      <span className="ml-4 text-lg font-bold text-[rgb(var(--text-tertiary))]">{point.id}.</span>
-                                      <span className="flex-1 text-[rgb(var(--text-secondary))]">{highlightText(point.text, searchQuery)}</span>
+                                    <li key={point.id} className={`flex items-start group/point ${textClasses}`}>
+                                      <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-[rgb(var(--background-tertiary))] text-[rgb(var(--primary))] font-bold text-sm ml-4 group-hover/point:bg-[rgb(var(--primary))] group-hover/point:text-white transition-colors duration-200">
+                                        {point.id}
+                                      </span>
+                                      <span className="flex-1 text-[rgb(var(--text-secondary))] pt-0.5">{highlightText(point.text, searchQuery)}</span>
                                     </li>
                                   ))}
                                 </ol>
                               )}
 
                               {section.paragraphs && (
-                                <div className={`space-y-5 text-[rgb(var(--text-secondary))] ${textClasses}`}>
+                                <div className={`space-y-6 text-[rgb(var(--text-secondary))] ${textClasses}`}>
                                     {section.paragraphs.map((paragraph, index) => (
-                                        <p key={index}>{highlightText(paragraph, searchQuery)}</p>
+                                        <p key={index} className="leading-relaxed">{highlightText(paragraph, searchQuery)}</p>
                                     ))}
                                 </div>
                               )}
@@ -603,7 +449,7 @@ const App: React.FC = () => {
                         <Placeholder 
                             type="empty" 
                             title="لا توجد نتائج" 
-                            message={`لم نتمكن من العثور على أي نتائج لبحثك عن "${searchQuery}".`} 
+                            message={`لم نتمكن من العثور على أي نتائج لبحثك عن "${searchQuery}". حاول تجربة كلمات مفتاحية أخرى.`} 
                         />
                       )
                     )}

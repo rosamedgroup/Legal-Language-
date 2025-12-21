@@ -1,0 +1,26 @@
+
+{
+  "name": "محسنات الصياغة القانونية",
+  "short_name": "الصياغة القانونية",
+  "description": "تطبيق لتصفح وقراءة محسنات الصياغة القانونية والأحكام القضائية بدون إنترنت.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzNiODJmNiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xNiAxNi41YTIuNSAyLjUgMCAwIDAtNSAwbTUtNC41YTkgOSAwIDAgMC05LTkgOSA5IDAgMCAwLTkgOSIvPjxwYXRoIGQ9Ik0xMiAzdjE4Ii8+PHBhdGggZD0iTTMgN2gyYzIgMCA1LTEgNy0yIDIgMSA1IDIgNyAyaDIiLz48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAxLTkgOSA5IDkgMCAwIDEtOS05Ii8+PHBhdGggZD0iTTggMTYuNWEyLjUgMi41IDAgMCAwLTUgMCIvPjwvc3ZnPg==",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzNiODJmNiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xNiAxNi41YTIuNSAyLjUgMCAwIDAtNSAwbTUtNC41YTkgOSAwIDAgMC05LTkgOSA5IDAgMCAwLTkgOSIvPjxwYXRoIGQ9Ik0xMiAzdjE4Ii8+PHBhdGggZD0iTTMgN2gyYzIgMCA1LTEgNy0yIDIgMSA1IDIgNyAyaDIiLz48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAxLTkgOSA5IDkgMCAwIDEtOS05Ii8+PHBhdGggZD0iTTggMTYuNWEyLjUgMi41IDAgMCAwLTUgMCIvPjwvc3ZnPg==",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "dir": "rtl",
+  "lang": "ar"
+}
