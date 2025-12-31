@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { DocumentType, Theme } from '../App';
+import { DocumentType, Theme } from '../types';
 import Logo from './assets/Logo';
 
 interface HeaderProps {

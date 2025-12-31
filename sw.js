@@ -6,7 +6,7 @@ const STATIC_ASSETS = [
   '/index.tsx',
   '/manifest.json',
   'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap'
+  'https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700;800&display=swap'
 ];
 
 // Install Event

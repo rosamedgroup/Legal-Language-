@@ -107,7 +107,6 @@ interface FlatTocNode extends TocNode {
 
 const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedSections, onToggleBookmark, activeSection, setActiveSection }) => {
   const [jumpQuery, setJumpQuery] = useState('');
-  const [isBookmarksOpen, setIsBookmarksOpen] = useState(true);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -153,7 +152,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
     const initialState: Record<string, boolean> = {};
     const setExpanded = (nodes: TocNode[]) => {
         nodes.forEach(node => {
-            initialState[node.key] = true;
+            initialState[node.key] = true; // Expand all by default for better visibility
             if (node.children.length > 0) setExpanded(node.children);
         });
     };
@@ -192,7 +191,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        const itemCount = (jumpQuery ? filteredTocSections.length : flatTocList?.length ?? 0) + (isBookmarksOpen ? bookmarkedSections.length : 0);
+        const itemCount = (jumpQuery ? filteredTocSections.length : flatTocList?.length ?? 0);
         if (itemCount === 0) return;
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
@@ -209,79 +208,38 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
     };
     containerRef.current?.addEventListener('keydown', handleKeyDown);
     return () => containerRef.current?.removeEventListener('keydown', handleKeyDown);
-  }, [focusedIndex, flatTocList, filteredTocSections, jumpQuery, bookmarkedSections.length, isBookmarksOpen]);
+  }, [focusedIndex, flatTocList, filteredTocSections, jumpQuery]);
   
   useEffect(() => {
       setFocusedIndex(-1);
       itemRefs.current.clear();
-  }, [jumpQuery, isBookmarksOpen, flatTocList, sections, bookmarkedSections.length]);
+  }, [jumpQuery, flatTocList, sections]);
 
   let itemCounter = 0;
   
   return (
     <div 
-        className="h-full flex flex-col focus:outline-none rounded-xl" 
+        className="h-full flex flex-col focus:outline-none" 
         ref={containerRef} 
         tabIndex={0}
         aria-activedescendant={focusedIndex !== -1 ? `toc-item-${focusedIndex}` : undefined}
     >
-      {bookmarkedSections.length > 0 && (
-        <div className="mb-6">
-           <button
-            onClick={() => setIsBookmarksOpen(!isBookmarksOpen)}
-            className="w-full flex justify-between items-center px-1 mb-3 group"
-            aria-expanded={isBookmarksOpen}
-          >
-            <h3 className="flex items-center gap-2 text-[11px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest font-bold group-hover:text-[rgb(var(--primary))] transition-colors">
-                المفضلة
-                <span className="bg-[rgb(var(--background-tertiary))] text-[rgb(var(--text-tertiary))] px-1.5 py-0.5 rounded-full text-[9px]">{bookmarkedSections.length}</span>
-            </h3>
-            <ChevronIcon isOpen={isBookmarksOpen} />
-          </button>
-          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isBookmarksOpen ? 'max-h-80' : 'max-h-0'}`}>
-              <ol role="listbox" className="space-y-1">
-              {bookmarkedSections.map((section) => {
-                  const currentIndex = itemCounter++;
-                  return (
-                      <TocItem 
-                          key={`bookmark-${slugify(section.title)}`}
-                          section={section}
-                          activeSection={activeSection}
-                          isBookmarked={true}
-                          onToggleBookmark={onToggleBookmark}
-                          isFocused={currentIndex === focusedIndex}
-                          itemRef={el => { itemRefs.current.set(currentIndex, el); }}
-                          id={`toc-item-${currentIndex}`}
-                          onLinkClick={handleLinkClick}
-                      />
-                  );
-              })}
-              </ol>
-          </div>
-        </div>
-      )}
-
-      <div className="flex-1 flex flex-col min-h-0">
-        <h2 className="px-1 text-[11px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest font-bold mb-3">
-          محتويات الوثيقة
-        </h2>
-        
-        <div className="relative mb-4 group">
+      <div className="relative mb-2 mt-2 group">
           <input
             type="text"
-            placeholder="البحث في العناوين..."
+            placeholder="بحث سريع..."
             value={jumpQuery}
             onChange={(e) => setJumpQuery(e.target.value)}
-            className="w-full pl-3 pr-9 py-2 bg-[rgb(var(--background-tertiary))] border-transparent rounded-xl text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--text-tertiary))] focus:bg-[rgb(var(--background-secondary))] focus:ring-2 focus:ring-[rgb(var(--ring))] border border-[rgb(var(--border-primary))] transition-all duration-200 text-sm"
+            className="w-full pl-3 pr-9 py-2 bg-[rgb(var(--background-tertiary))] border-transparent rounded-lg text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--text-tertiary))] focus:bg-[rgb(var(--background-secondary))] focus:ring-2 focus:ring-[rgb(var(--ring))] border border-[rgb(var(--border-primary))] transition-all duration-200 text-sm"
           />
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-[rgb(var(--text-tertiary))] group-focus-within:text-[rgb(var(--primary))] transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
             </svg>
           </div>
-        </div>
+      </div>
         
-        <nav ref={navRef} className="flex-1 overflow-y-auto pr-1 -mr-2 scrollbar-hide">
+      <nav ref={navRef} className="flex-1 overflow-y-auto pr-1 -mr-2 scrollbar-hide">
             {tocTree && flatTocList ? (
                 <ol role="listbox" className="space-y-1">
                   {flatTocList.map(node => {
@@ -290,6 +248,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                     const isExpanded = expandedNodes[node.key] ?? true;
                     const isBookmarked = !!node.section && bookmarkedSlugs.has(slugify(node.section.title));
                     const isActive = !!node.section && activeSection === slugify(node.section.title);
+                    const isRoot = node.level === 0;
                     
                     return (
                         <li 
@@ -302,16 +261,19 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                 isActive ? 'bg-[rgba(var(--primary),0.08)]' : ''
                             } ${
                                 currentIndex === focusedIndex && !isActive ? 'bg-[rgb(var(--background-tertiary))]' : ''
-                            }`}
-                            style={{ marginRight: `${node.level * 0.5}rem` }}
+                            } ${isRoot && hasChildren ? 'mt-2 mb-1' : ''}`}
+                            style={{ paddingRight: isRoot ? 0 : `${node.level * 0.75}rem` }}
                         >
-                            <div className="flex items-center w-full">
+                            <div className={`flex items-center w-full ${isRoot && hasChildren ? 'font-bold text-[rgb(var(--text-primary))]' : ''}`}>
                                 {hasChildren ? (
-                                    <button onClick={() => toggleNode(node.key)} className="p-1.5 mr-0.5 rounded-lg hover:bg-[rgb(var(--background-tertiary))] transition-colors">
-                                        <ChevronIcon isOpen={isExpanded} />
+                                    <button 
+                                        onClick={() => toggleNode(node.key)} 
+                                        className={`p-1.5 mr-0.5 rounded-lg hover:bg-[rgb(var(--background-tertiary))] transition-colors flex-shrink-0 ${isRoot ? 'hover:text-[rgb(var(--primary))]' : ''}`}
+                                    >
+                                        <ChevronIcon isOpen={isExpanded} className={isRoot ? 'text-[rgb(var(--text-primary))]' : ''} />
                                     </button>
                                 ) : (
-                                    <div className="w-5 h-5 flex-shrink-0"></div>
+                                    <div className="w-5 h-5 flex-shrink-0 mr-0.5"></div>
                                 )}
                                 <a
                                     href={node.section ? `#${slugify(node.section.title)}` : '#'}
@@ -320,8 +282,8 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                     className={`flex-1 min-w-0 truncate py-2 px-1 rounded-lg transition-colors text-[13px] ${
                                         isActive
                                         ? 'text-[rgb(var(--primary))] font-bold'
-                                        : `text-[rgb(var(--text-secondary))] ${!node.section ? 'cursor-default font-semibold text-[rgb(var(--text-primary))]' : 'hover:text-[rgb(var(--text-primary))]'}`
-                                    }`}
+                                        : `text-[rgb(var(--text-secondary))] ${!node.section ? 'cursor-default' : 'hover:text-[rgb(var(--text-primary))]'}`
+                                    } ${isRoot ? 'text-sm' : ''}`}
                                 >
                                     {node.title}
                                 </a>
@@ -366,8 +328,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                     </p>
                 )
             )}
-        </nav>
-      </div>
+      </nav>
     </div>
   );
 };

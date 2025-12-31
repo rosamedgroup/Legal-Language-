@@ -1,9 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-
-type FontSize = 'base' | 'lg' | 'xl';
-type LineHeight = 'normal' | 'relaxed' | 'loose';
-type Theme = 'light' | 'dark' | 'system';
+import { FontSize, LineHeight, Theme } from '../types';
 
 interface SettingsPanelProps {
   isOpen: boolean;
