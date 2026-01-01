@@ -19,6 +19,7 @@ import * as moralDamagesContent from './data/moralDamagesContent';
 import * as criminalJusticeQaContent from './data/criminalJusticeQaContent';
 import * as generalJudiciaryQaContent from './data/generalJudiciaryQaContent';
 import * as arbitrationAwardsContent from './data/arbitrationAwardsContent';
+import * as qanoniahCaseContent from './data/qanoniahCaseContent';
 
 const defaultSettings: AppSettings = {
   fontSize: 'lg',
@@ -74,6 +75,12 @@ const documents = {
     buttonLabel: 'أحكام تحكيم',
     author: 'هيئات تحكيم مختارة',
     content: arbitrationAwardsContent,
+  },
+  qanoniahCase: {
+    title: 'قضية أتعاب محاماة',
+    buttonLabel: 'أتعاب محاماة',
+    author: 'المحكمة التجارية بالدمام',
+    content: qanoniahCaseContent,
   },
 };
 

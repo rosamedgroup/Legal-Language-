@@ -32,40 +32,62 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     <article className="lg:col-span-9 w-full min-w-0">
       <div className="bg-[rgb(var(--background-secondary))] p-5 sm:p-8 lg:p-10 rounded-2xl shadow-sm border border-[rgb(var(--border-primary))] overflow-hidden">
           {introductionMatch && introduction.title && (
-            <div id="introduction-section" className="scroll-mt-24 mb-10 sm:mb-16 border-b border-[rgb(var(--border-secondary))] pb-10">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[rgb(var(--text-primary))] mb-6 leading-tight">
+            <div 
+              id="introduction-section" 
+              className="scroll-mt-24 mb-10 sm:mb-16 border-b border-[rgb(var(--border-secondary))] pb-10"
+              aria-labelledby="introduction-title"
+            >
+              <h2 
+                id="introduction-title"
+                className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[rgb(var(--text-primary))] mb-6 leading-tight"
+              >
                   {highlightText(introduction.title, lowercasedQuery)}
               </h2>
               {introduction.paragraphs && (
                 <div className={`space-y-6 text-[rgb(var(--text-secondary))] ${textClasses}`}>
                   {introduction.paragraphs.map((p: string, index: number) => (
-                    <p key={index} className="transition-all duration-200 leading-relaxed">{highlightText(p, lowercasedQuery)}</p>
+                    <p 
+                      key={index} 
+                      id={`intro-p-${index}`}
+                      className="transition-all duration-200 leading-relaxed"
+                    >
+                      {highlightText(p, lowercasedQuery)}
+                    </p>
                   ))}
                 </div>
               )}
               {introduction.sections && (
                 <div className={`mt-8 space-y-4 text-[rgb(var(--text-secondary))] ${textClasses} border-r-4 border-[rgb(var(--primary)/0.2)] pr-4`}>
                     {introduction.sections.map((s: string, index: number) => (
-                        <p key={index} className="font-medium leading-relaxed">{highlightText(s, lowercasedQuery)}</p>
+                        <p key={index} id={`intro-sec-${index}`} className="font-medium leading-relaxed">{highlightText(s, lowercasedQuery)}</p>
                     ))}
                 </div>
               )}
               {introduction.conclusion && (
-                <p className={`mt-8 text-[rgb(var(--text-secondary))] font-medium italic opacity-90 ${textClasses} leading-relaxed`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
+                <p id="intro-conclusion" className={`mt-8 text-[rgb(var(--text-secondary))] font-medium italic opacity-90 ${textClasses} leading-relaxed`}>{highlightText(introduction.conclusion, lowercasedQuery)}</p>
               )}
             </div>
           )}
           
           {sections.length > 0 ? (
             <div className="space-y-16 sm:space-y-20">
-              {sections.map((section) => {
+              {sections.map((section, sectionIdx) => {
                 const sectionSlug = slugify(section.title);
                 const isBookmarked = bookmarks.includes(sectionSlug);
+                const headerId = `${sectionSlug}-header`;
 
                 return (
-                  <section key={section.title} id={sectionSlug} className="scroll-mt-24 group/section">
+                  <section 
+                    key={`${section.title}-${sectionIdx}`} 
+                    id={sectionSlug} 
+                    className="scroll-mt-24 group/section"
+                    aria-labelledby={headerId}
+                  >
                     <div className="flex justify-between items-start mb-8 sm:mb-10 border-b border-[rgb(var(--border-secondary))] pb-6">
-                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[rgb(var(--text-primary))] leading-snug">
+                      <h2 
+                        id={headerId}
+                        className="text-xl sm:text-2xl lg:text-3xl font-bold text-[rgb(var(--text-primary))] leading-snug"
+                      >
                         {highlightText(section.title, searchQuery)}
                       </h2>
                       <button
@@ -86,8 +108,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                     {section.metadata && (
                       <div className="mb-8 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                          {Object.entries(section.metadata).map(([key, value]) => (
-                            <div key={key} className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-1">
+                          {Object.entries(section.metadata).map(([key, value], metaIdx) => (
+                            <div key={key} id={`${sectionSlug}-meta-${metaIdx}`} className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-1">
                               <span className="font-bold text-[rgb(var(--text-tertiary))] text-[10px] uppercase tracking-wider">{key}:</span>
                               <span className="text-[rgb(var(--text-primary))] font-medium sm:text-left">{value}</span>
                             </div>
@@ -99,7 +121,11 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
                     {section.points && (
                       <ol className="space-y-6 list-none">
                         {section.points.map((point) => (
-                          <li key={point.id} className={`flex items-start group/point ${textClasses}`}>
+                          <li 
+                            key={point.id} 
+                            id={`${sectionSlug}-point-${point.id}`}
+                            className={`flex items-start group/point ${textClasses}`}
+                          >
                             <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-[rgb(var(--background-tertiary))] text-[rgb(var(--primary))] font-bold text-sm ml-4 group-hover/point:bg-[rgb(var(--primary))] group-hover/point:text-white transition-colors duration-200">
                               {point.id}
                             </span>
@@ -111,8 +137,14 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
                     {section.paragraphs && (
                       <div className={`space-y-6 text-[rgb(var(--text-secondary))] ${textClasses}`}>
-                          {section.paragraphs.map((paragraph, index) => (
-                              <p key={index} className="leading-relaxed">{highlightText(paragraph, searchQuery)}</p>
+                          {section.paragraphs.map((paragraph, paraIdx) => (
+                              <p 
+                                key={paraIdx} 
+                                id={`${sectionSlug}-para-${paraIdx}`}
+                                className="leading-relaxed"
+                              >
+                                {highlightText(paragraph, searchQuery)}
+                              </p>
                           ))}
                       </div>
                     )}
