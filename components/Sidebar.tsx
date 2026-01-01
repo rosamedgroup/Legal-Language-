@@ -80,6 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
       e.preventDefault();
+      if (!slug || slug === '#') return;
       setActiveSection(slug);
       const element = document.getElementById(slug);
       if (element) {
@@ -192,6 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     onToggleBookmark={onToggleBookmark}
                     activeSection={activeSection}
                     setActiveSection={setActiveSection}
+                    onLinkClick={handleLinkClick}
                 />
             </CollapsibleSection>
         </div>

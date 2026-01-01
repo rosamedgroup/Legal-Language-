@@ -9,6 +9,7 @@ interface TableOfContentsProps {
   onToggleBookmark: (slug: string) => void;
   activeSection: string;
   setActiveSection: (slug: string) => void;
+  onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => void;
 }
 
 const BookmarkFilledIcon: React.FC = () => (
@@ -105,7 +106,7 @@ interface FlatTocNode extends TocNode {
     level: number;
 }
 
-const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedSections, onToggleBookmark, activeSection, setActiveSection }) => {
+const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedSections, onToggleBookmark, activeSection, setActiveSection, onLinkClick }) => {
   const [jumpQuery, setJumpQuery] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
   
@@ -177,8 +178,9 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
     return flatList;
   }, [tocTree, expandedNodes]);
 
-  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
+  const defaultHandleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
       e.preventDefault();
+      if (!slug || slug === '#') return;
       setActiveSection(slug);
       const element = document.getElementById(slug);
       if (element) {
@@ -188,6 +190,8 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
         }
       }
   };
+
+  const activeHandleLinkClick = onLinkClick || defaultHandleLinkClick;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -277,7 +281,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                 )}
                                 <a
                                     href={node.section ? `#${slugify(node.section.title)}` : '#'}
-                                    onClick={(e) => node.section && handleLinkClick(e, slugify(node.section.title))}
+                                    onClick={(e) => node.section ? activeHandleLinkClick(e, slugify(node.section.title)) : e.preventDefault()}
                                     tabIndex={-1}
                                     className={`flex-1 min-w-0 truncate py-2 px-1 rounded-lg transition-colors text-[13px] ${
                                         isActive
@@ -317,7 +321,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, bookmarkedS
                                     isFocused={currentIndex === focusedIndex}
                                     itemRef={el => { itemRefs.current.set(currentIndex, el); }}
                                     id={`toc-item-${currentIndex}`}
-                                    onLinkClick={handleLinkClick}
+                                    onLinkClick={activeHandleLinkClick}
                                 />
                             );
                         })}
